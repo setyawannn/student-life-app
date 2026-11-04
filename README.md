@@ -146,10 +146,12 @@ features/<nama_fitur>/
 └── utils/             # Fungsi pembantu / helper khusus fitur
 ```
 
-Baca dokumentasi lengkap arsitektur dan sistem desain di:
+Baca dokumentasi lengkap arsitektur dan sistem desain di direktori `docs/`:
+* [🎨 **docs/06_STANDAR_LAYOUT_DAN_UI_SCAFFOLD.md**](docs/06_STANDAR_LAYOUT_DAN_UI_SCAFFOLD.md): **Panduan Utama UI Layout**: Fixed Header, Fixed Navbar (Ikon Outline), Dynamic Slot (`innerPadding`), dan template boilerplate.
 * [📖 **ARCHITECTURE.md**](ARCHITECTURE.md): Panduan lengkap sistem desain, konvensi penamaan, dan standar Material 3.
 * [🗄️ **docs/03_SKEMA_DATABASE_SUPABASE.md**](docs/03_SKEMA_DATABASE_SUPABASE.md): Skrip SQL DDL tabel basis data dan kebijakan RLS Supabase.
 * [👨‍💻 **docs/04_PANDUAN_FITUR_TIM.md**](docs/04_PANDUAN_FITUR_TIM.md): Panduan teknis mendalam dan ceklis tugas per anggota.
+* [📂 **docs/README.md**](docs/README.md): Indeks direktori seluruh dokumentasi proyek StudentLife.
 
 ---
 

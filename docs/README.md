@@ -16,6 +16,7 @@ Silakan pelajari dokumen-dokumen berikut sesuai dengan kebutuhan peran dan penge
 | 🗄️ [03. Skema Basis Data & Supabase](03_SKEMA_DATABASE_SUPABASE.md) | Skrip SQL DDL tabel (`tasks`, `schedules`, `notes`, `study_goals`, `references`), aturan Row Level Security (RLS), konfigurasi Supabase Storage, dan model DTO Kotlin. | Seluruh Pengembang |
 | 👨‍💻 [04. Panduan Fitur Per Anggota](04_PANDUAN_FITUR_TIM.md) | Panduan teknis mendalam per fitur anggota (Gangsar, Abdillah, Prayoga, Tubagus, Qoid), rincian komponen UI (LazyColumn, HorizontalPager, LazyVerticalGrid, LazyRow), alur navigasi multi-screen, dan ceklis mandiri asistensi. | Masing-masing Penanggung Jawab Fitur |
 | ⚙️ [05. Setup Gradle & Dependensi](05_SETUP_DAN_DEPENDENCY_GRADLE.md) | Panduan konfigurasi `libs.versions.toml`, `build.gradle.kts`, izin `AndroidManifest.xml`, dan inisialisasi singleton `SupabaseClient`. | Technical Lead / Seluruh Anggota |
+| 🎨 [06. Standar Layout & UI Scaffold](06_STANDAR_LAYOUT_DAN_UI_SCAFFOLD.md) | **Standar Resmi UI Layout**: Panduan Fixed Header, Fixed Navbar (Outline Icons), penanganan dynamic middle slot (`innerPadding`), design tokens, dan template boilerplate halaman. | Seluruh Tim Pengembang |
 
 ---
 
