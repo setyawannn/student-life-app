@@ -4,26 +4,30 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.student_life_app.core.designsystem.components.AppTopBar
 import com.example.student_life_app.core.designsystem.components.EmptyStateView
+import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
+import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
 import com.example.student_life_app.features.schedule.model.DayOfWeekEnum
+import com.example.student_life_app.ui.theme.PrimaryBlue
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,17 +40,28 @@ fun ScheduleListScreen(
     val pagerState = rememberPagerState(pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(
+    StudentLifeScaffold(
         topBar = {
-            AppTopBar(title = "Jadwal Perkuliahan")
+            StudentLifeHeader(
+                title = "Jadwal Kuliah",
+                badgeIcon = Icons.Outlined.CalendarMonth
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToCreate,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = PrimaryBlue,
+                contentColor = Color.White,
+                shape = CircleShape,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(56.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Jadwal")
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = "Tambah Jadwal",
+                    modifier = Modifier.size(26.dp)
+                )
             }
         }
     ) { innerPadding ->
@@ -80,7 +95,7 @@ fun ScheduleListScreen(
             ) { page ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     EmptyStateView(
-                        icon = Icons.Default.CalendarMonth,
+                        icon = Icons.Outlined.CalendarMonth,
                         title = "Jadwal Hari ${days[page].name} Kosong",
                         description = "Belum ada perkuliahan yang terjadwal di hari ini.",
                         actionButtonText = "Tambah Jadwal Hari Ini",
