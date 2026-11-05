@@ -8,4 +8,5 @@ interface NoteRepository {
     fun getNotes(userId: String): Flow<Resource<List<Note>>>
     suspend fun createNoteWithImage(note: Note, imageBytes: ByteArray?): Resource<Unit>
     suspend fun deleteNote(noteId: String): Resource<Unit>
+    suspend fun toggleBookmark(noteId: String): Resource<Unit>
 }

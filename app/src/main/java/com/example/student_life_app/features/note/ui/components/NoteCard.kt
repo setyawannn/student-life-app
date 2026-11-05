@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.student_life_app.features.note.model.Note
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
 import com.example.student_life_app.ui.theme.SurfaceCard
@@ -38,20 +41,11 @@ import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
 
-data class NoteCardUiItem(
-    val id: String,
-    val title: String,
-    val courseName: String,
-    val snippet: String,
-    val dateText: String,
-    val imageUrl: String? = null,
-    val badgeType: String? = null // "Diag" atau "Photo"
-)
-
 @Composable
 fun NoteCard(
-    note: NoteCardUiItem,
+    note: Note,
     onClick: () -> Unit,
+    onBookmarkClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -134,7 +128,7 @@ fun NoteCard(
 
         // Snippet Isi Catatan
         Text(
-            text = note.snippet,
+            text = note.content,
             style = MaterialTheme.typography.bodySmall.copy(
                 fontSize = 12.sp,
                 color = TextSecondary,
@@ -169,12 +163,17 @@ fun NoteCard(
                 )
             }
 
-            Icon(
-                imageVector = Icons.Outlined.BookmarkBorder,
-                contentDescription = "Simpan",
-                tint = TextMuted,
-                modifier = Modifier.size(18.dp)
-            )
+            IconButton(
+                onClick = onBookmarkClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = if (note.isBookmarked) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = "Simpan",
+                    tint = if (note.isBookmarked) PrimaryBlue else TextMuted,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }

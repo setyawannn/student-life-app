@@ -400,3 +400,43 @@ Gunakan format pesan commit yang jelas dan seragam:
 2. Pastikan proyek berhasil di-*compile* (`./gradlew assembleDebug`) tanpa error.
 3. Buat Pull Request (PR) ke branch `develop` dan mintalah Ketua Tim (`Muhammad Abdillah`) untuk me-review.
 4. Setelah branch `develop` diverifikasi dan semua 5 fitur berjalan normal, lakukan *merge* ke branch `main`.
+
+---
+
+## 5. Standar Pemisahan MVVM & ViewModel (*Zero Business Data in View*)
+
+Untuk menjamin kode bersih (*clean code*) dan memudahkan pengujian maupun migrasi backend, seluruh anggota tim wajib mematuhi aturan pemisahan antarmuka dan data berikut:
+
+### A. Aturan Wajib untuk Layer View (`ui/`)
+1. **Dilarang keras mendefinisikan data bisnis atau dummy data secara lokal di dalam file Screen.**
+   * ❌ *SALAH:* `val sampleNotes = listOf(...)` atau `val filterList = listOf(...)` didefinisikan langsung di dalam `@Composable fun NoteListScreen()`.
+   * ✅ *BENAR:* Seluruh list data, filter options, dan stat counts dipasok oleh `ViewModel.uiState`.
+2. **Dilarang mengelola state data bisnis dengan `remember { mutableStateOf(...) }` di dalam Screen.**
+   * `searchQuery`, `selectedFilter`, dan status item wajib dikelola di `ViewModel`.
+   * Layar Composable hanya mengamati state secara reaktif:
+     ```kotlin
+     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+     ```
+   * Event dari pengguna diteruskan langsung ke ViewModel:
+     ```kotlin
+     TextField(
+         value = uiState.searchQuery,
+         onValueChange = { viewModel.onSearchQueryChange(it) }
+     )
+     ```
+
+### B. Aturan untuk Layer Controller / ViewModel (`controller/`)
+1. Seluruh state layar dibungkus dalam satu data class `UiState` yang di-expose melalui `StateFlow<UiState>`.
+2. ViewModel menggunakan dependensi abstraksi `Repository` interface dengan default instance `Fake<Feature>Repository()`:
+   ```kotlin
+   class TaskViewModel(
+       private val repository: TaskRepository = FakeTaskRepository(),
+       private val service: TaskService = TaskServiceImpl()
+   ) : ViewModel()
+   ```
+3. Dengan pola default parameter ini, Composable Screen dapat memanggil `viewModel: TaskViewModel = viewModel()` secara langsung tanpa konfigurasi factory manual yang rumit.
+
+### C. Aturan untuk Layer Data (`data/repository/`)
+1. Setiap fitur memiliki `Repository` interface (misal `TaskRepository`, `NoteRepository`).
+2. Selama fase pengembangan sebelum backend Supabase aktif (atau saat pengujian offline), sediakan kelas `Fake<Feature>Repository` yang mengimplementasikan interface tersebut dengan data akademik representatif.
+3. Saat integrasi Supabase siap, pengembang hanya perlu membuat `Supabase<Feature>RepositoryImpl` dan menyuntikkannya ke ViewModel tanpa perlu mengubah sebaris pun kode di layer `ui/` maupun `controller/`.

@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Description
@@ -33,15 +34,11 @@ import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,11 +47,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
+import com.example.student_life_app.features.note.controller.NoteViewModel
 import com.example.student_life_app.features.note.ui.components.NoteCard
-import com.example.student_life_app.features.note.ui.components.NoteCardUiItem
-import com.example.student_life_app.ui.theme.BorderOutline
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
 import com.example.student_life_app.ui.theme.SurfaceCard
@@ -62,60 +60,23 @@ import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
 
+/**
+ * Screen Catatan Belajar dengan penerapan murni arsitektur MVVM (Model-View-ViewModel).
+ * Seluruh state, filter, pencarian, dan data dipisahkan sepenuhnya di NoteViewModel.
+ */
 @Composable
 fun NoteListScreen(
+    viewModel: NoteViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToCreate: () -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Semua (14)") }
-
-    // Dummy Data representatif sesuai dengan desain Figma
-    val filterList = listOf("Semua (14)", "Pemrograman Mobile (5)", "Basis Data (4)", "IMK (3)", "Jaringan (2)")
-    val sampleNotes = listOf(
-        NoteCardUiItem(
-            id = "1",
-            title = "Arsitektur MVVM & StateFlow",
-            courseName = "Pemrograman Mobile",
-            snippet = "Pemisahan layer UI, ViewModel, dan Repository untuk menghasilkan kode bersih.",
-            dateText = "28 Okt 2026",
-            imageUrl = "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&auto=format&fit=crop",
-            badgeType = "Diag"
-        ),
-        NoteCardUiItem(
-            id = "2",
-            title = "Normalisasi Database 1NF-3NF",
-            courseName = "Basis Data Lanjut",
-            snippet = "Tahapan dekomposisi tabel untuk menghilangkan anomali redundansi data dan update.",
-            dateText = "27 Okt 2026",
-            imageUrl = null,
-            badgeType = null
-        ),
-        NoteCardUiItem(
-            id = "3",
-            title = "Heuristic Nielsen 10 Prinsip",
-            courseName = "IMK",
-            snippet = "Prinsip evaluasi usability pada antarmuka pengguna digital secara konsisten.",
-            dateText = "25 Okt 2026",
-            imageUrl = "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=500&auto=format&fit=crop",
-            badgeType = "Photo"
-        ),
-        NoteCardUiItem(
-            id = "4",
-            title = "Query Optimization & B-Tree",
-            courseName = "Basis Data Lanjut",
-            snippet = "Penggunaan index clustering vs non-clustering pada InnoDB engine untuk efisiensi.",
-            dateText = "22 Okt 2026",
-            imageUrl = null,
-            badgeType = null
-        )
-    )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Catatan Belajar",
-                badgeIcon = Icons.Outlined.Description
+                badgeIcon = Icons.AutoMirrored.Outlined.MenuBook
             )
         },
         floatingActionButton = {
@@ -166,8 +127,8 @@ fun NoteListScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                        value = uiState.searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChange(it) },
                         placeholder = {
                             Text(
                                 text = "Cari judul atau isi catatan...",
@@ -205,8 +166,8 @@ fun NoteListScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(filterList) { filter ->
-                        val isSelected = filter == selectedFilter
+                    items(uiState.categoryFilters) { filter ->
+                        val isSelected = filter == uiState.selectedCategory
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
@@ -216,7 +177,7 @@ fun NoteListScreen(
                                     if (isSelected) PrimaryBlue else BorderOutlineVariant,
                                     RoundedCornerShape(20.dp)
                                 )
-                                .clickable { selectedFilter = filter }
+                                .clickable { viewModel.onCategorySelect(filter) }
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
@@ -237,21 +198,21 @@ fun NoteListScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SummaryStatCard(
-                        count = "14",
+                        count = "${uiState.totalNotesCount}",
                         label = "Total Catatan",
                         icon = Icons.Outlined.Description,
                         indicatorColor = PrimaryBlue,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryStatCard(
-                        count = "8",
+                        count = "${uiState.photoNotesCount}",
                         label = "Dengan Foto",
                         icon = Icons.Outlined.CameraAlt,
                         indicatorColor = Color(0xFF00714D),
                         modifier = Modifier.weight(1f)
                     )
                     SummaryStatCard(
-                        count = "4",
+                        count = "${uiState.coursesCount}",
                         label = "Mata Kuliah",
                         icon = Icons.Outlined.School,
                         indicatorColor = Color(0xFFE28B00),
@@ -260,10 +221,11 @@ fun NoteListScreen(
                 }
             }
 
-            // 4. Daftar Kartu Catatan (2 Kolom Grid)
-            items(sampleNotes, key = { it.id }) { note ->
+            // 4. Daftar Kartu Catatan (2 Kolom Grid) dari filteredNotes ViewModel
+            items(uiState.filteredNotes, key = { it.id }) { note ->
                 NoteCard(
                     note = note,
+                    onBookmarkClick = { viewModel.onBookmarkToggle(note.id) },
                     onClick = { onNavigateToDetail(note.id) }
                 )
             }
