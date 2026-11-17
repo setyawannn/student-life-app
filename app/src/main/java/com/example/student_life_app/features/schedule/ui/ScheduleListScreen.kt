@@ -23,7 +23,6 @@ import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -41,8 +40,8 @@ import com.example.student_life_app.ui.theme.PrimaryBlue
 import kotlinx.coroutines.launch
 
 /**
- * Screen Jadwal Kuliah dengan arsitektur MVVM.
- * Data perkuliahan dan pemilihan tab hari dikendalikan oleh ScheduleViewModel.
+ * Layar Daftar Jadwal Kuliah: tab hari (HorizontalPager) + daftar kartu (LazyColumn).
+ * Semua jadwal dimuat sekali oleh ViewModel, lalu tiap halaman pager memfilter harinya sendiri.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,14 +54,6 @@ fun ScheduleListScreen(
     val days = DayOfWeekEnum.entries
     val pagerState = rememberPagerState(pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
-
-    // Sinkronisasi perpindahan tab pager dengan ViewModel
-    LaunchedEffect(pagerState.currentPage) {
-        val currentDay = days[pagerState.currentPage]
-        if (currentDay != uiState.selectedDay) {
-            viewModel.selectDay(currentDay)
-        }
-    }
 
     StudentLifeScaffold(
         topBar = {
@@ -94,7 +85,6 @@ fun ScheduleListScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Tab Hari (Horizontal Pager Support)
             PrimaryScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 16.dp,
@@ -104,9 +94,7 @@ fun ScheduleListScreen(
                     Tab(
                         selected = pagerState.currentPage == index,
                         onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
+                            coroutineScope.launch { pagerState.animateScrollToPage(index) }
                         },
                         text = { Text(text = day.name) }
                     )
@@ -118,7 +106,12 @@ fun ScheduleListScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 val currentDay = days[page]
-                if (uiState.schedules.isEmpty()) {
+                // Filter jadwal khusus hari pada halaman pager ini
+                val daySchedules = viewModel.service.sortSchedulesByTime(
+                    uiState.schedules.filter { it.dayOfWeek == currentDay }
+                )
+
+                if (daySchedules.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         EmptyStateView(
                             icon = Icons.Outlined.CalendarMonth,
@@ -134,7 +127,7 @@ fun ScheduleListScreen(
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 84.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(uiState.schedules, key = { it.id }) { schedule ->
+                        items(daySchedules, key = { it.id }) { schedule ->
                             ScheduleCard(
                                 schedule = schedule,
                                 onClick = { onNavigateToDetail(schedule.id) }

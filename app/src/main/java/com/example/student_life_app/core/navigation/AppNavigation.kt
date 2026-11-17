@@ -10,9 +10,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.example.student_life_app.features.goal.ui.GoalListScreen
 import com.example.student_life_app.features.note.ui.NoteListScreen
 import com.example.student_life_app.features.reference.ui.ReferenceListScreen
+import com.example.student_life_app.features.schedule.ui.ScheduleDetailScreen
+import com.example.student_life_app.features.schedule.ui.ScheduleFormScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleListScreen
 import com.example.student_life_app.features.task.ui.TaskListScreen
 
@@ -55,7 +59,42 @@ fun MainAppContainer(
 
             // Fitur 2: Manajemen Jadwal Kuliah (Muhammad Abdillah)
             composable(ScreenRoute.ScheduleList.route) {
-                ScheduleListScreen()
+                ScheduleListScreen(
+                    onNavigateToDetail = { id ->
+                        navController.navigate(ScreenRoute.ScheduleDetail.createRoute(id))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.ScheduleForm.createRoute())
+                    }
+                )
+            }
+            composable(
+                route = ScreenRoute.ScheduleDetail.route,
+                arguments = listOf(navArgument("scheduleId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val scheduleId = backStackEntry.arguments?.getString("scheduleId").orEmpty()
+                ScheduleDetailScreen(
+                    scheduleId = scheduleId,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(ScreenRoute.ScheduleForm.createRoute(id)) },
+                    onDeleted = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = ScreenRoute.ScheduleForm.route,
+                arguments = listOf(
+                    navArgument("scheduleId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                ScheduleFormScreen(
+                    scheduleId = backStackEntry.arguments?.getString("scheduleId"),
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
             }
 
             // Fitur 3: Catatan Belajar (Prayoga Adi Setyawan)
