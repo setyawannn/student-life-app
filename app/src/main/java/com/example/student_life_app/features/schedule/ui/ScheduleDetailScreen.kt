@@ -154,6 +154,15 @@ fun ScheduleDetailScreen(
                 AppButton(text = "Ubah Jadwal", onClick = { onEdit(schedule.id) })
                 AppOutlinedButton(text = "Hapus Jadwal", onClick = { showDeleteDialog = true })
 
+                // BARU: pesan error kalau hapus ke server gagal
+                uiState.errorMessage?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
