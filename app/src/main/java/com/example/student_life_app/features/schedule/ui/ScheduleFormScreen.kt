@@ -167,10 +167,21 @@ fun ScheduleFormScreen(
                 errorMessage = lecturerError
             )
 
+            // BARU: pesan error dari server (misalnya koneksi gagal)
+            uiState.errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             AppButton(
-                text = "Simpan Jadwal",
+                // BARU: tombol nonaktif saat sedang menyimpan
+                text = if (uiState.isSaving) "Menyimpan..." else "Simpan Jadwal",
+                enabled = !uiState.isSaving,
                 onClick = {
                     val service = viewModel.service
                     // Validasi per kolom supaya pesan error muncul tepat di bawah kolomnya
