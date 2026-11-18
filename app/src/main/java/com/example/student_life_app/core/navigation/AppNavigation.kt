@@ -15,7 +15,8 @@ import com.example.student_life_app.features.note.ui.NoteListScreen
 import com.example.student_life_app.features.reference.ui.ReferenceListScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleListScreen
 import com.example.student_life_app.features.task.ui.TaskListScreen
-
+import com.example.student_life_app.features.task.ui.TaskDetailScreen
+import com.example.student_life_app.features.task.ui.TaskFormScreen
 @Composable
 fun MainAppContainer(
     navController: NavHostController = rememberNavController()
@@ -50,7 +51,49 @@ fun MainAppContainer(
         ) {
             // Fitur 1: Manajemen Tugas Kuliah (Gangsar Wijayanto)
             composable(ScreenRoute.TaskList.route) {
-                TaskListScreen()
+                TaskListScreen(
+                    onNavigateToDetail = { taskId ->
+                        navController.navigate(ScreenRoute.TaskDetail.createRoute(taskId))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.TaskForm.createRoute())
+                    }
+                )
+            }
+
+            composable(
+                route = ScreenRoute.TaskDetail.route,
+                arguments = listOf(
+                    androidx.navigation.navArgument("taskId") {
+                        type = androidx.navigation.NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId") ?: return@composable
+                TaskDetailScreen(
+                    taskId = taskId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToEdit = { editId ->
+                        navController.navigate(ScreenRoute.TaskForm.createRoute(editId))
+                    }
+                )
+            }
+
+            composable(
+                route = ScreenRoute.TaskForm.route,
+                arguments = listOf(
+                    androidx.navigation.navArgument("taskId") {
+                        type = androidx.navigation.NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId")
+                TaskFormScreen(
+                    taskId = taskId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             // Fitur 2: Manajemen Jadwal Kuliah (Muhammad Abdillah)
