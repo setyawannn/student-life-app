@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 data class TaskListUiState(
     val isLoading: Boolean = false,
@@ -22,6 +23,7 @@ data class TaskListUiState(
     val filterOptions: List<String> = listOf("Semua", "Belum Selesai", "Selesai"),
     val allTasks: List<Task> = emptyList(),
     val filteredTasks: List<Task> = emptyList(),
+    val selectedTask: Task? = null,
     val totalCount: Int = 0,
     val pendingCount: Int = 0,
     val completedCount: Int = 0,
@@ -63,8 +65,20 @@ class TaskViewModel(
                             )
                         }
                     }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = resource.message) }
+                    is Resource.Error -> _uiState.update {
+                        it.copy(isLoading = false, errorMessage = resource.message)
+                    }
                 }
+            }
+        }
+    }
+
+    fun loadTaskDetail(taskId: String) {
+        viewModelScope.launch {
+            when (val result = repository.getTaskById(taskId)) {
+                is Resource.Success -> _uiState.update { it.copy(selectedTask = result.data) }
+                is Resource.Error -> _uiState.update { it.copy(errorMessage = result.message) }
+                else -> Unit
             }
         }
     }
@@ -89,10 +103,76 @@ class TaskViewModel(
 
     fun toggleTaskCompletion(task: Task) {
         val newStatus = if (task.status == TaskStatus.COMPLETED) TaskStatus.TODO else TaskStatus.COMPLETED
+        updateTaskStatus(task.id, newStatus)
+    }
+
+    fun updateTaskStatus(taskId: String, newStatus: TaskStatus) {
         viewModelScope.launch {
-            repository.updateTaskStatus(task.id, newStatus)
+            repository.updateTaskStatus(taskId, newStatus)
+            loadTaskDetail(taskId)
             loadTasks()
         }
+    }
+
+    fun saveTask(
+        taskId: String?,
+        title: String,
+        courseName: String,
+        description: String,
+        dueDate: String,
+        status: TaskStatus,
+        onSuccess: () -> Unit
+    ) {
+        val validationError = service.validateTaskInput(title, courseName)
+        if (validationError != null) {
+            _uiState.update { it.copy(errorMessage = validationError) }
+            return
+        }
+        if (dueDate.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Tenggat waktu tidak boleh kosong") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(errorMessage = null) }
+            if (taskId == null) {
+                val newTask = Task(
+                    id = UUID.randomUUID().toString(),
+                    userId = "default_user",
+                    title = title.trim(),
+                    courseName = courseName.trim(),
+                    description = description.trim().ifBlank { null },
+                    dueDate = dueDate.trim(),
+                    status = status
+                )
+                repository.createTask(newTask)
+            } else {
+                val updatedTask = Task(
+                    id = taskId,
+                    userId = "default_user",
+                    title = title.trim(),
+                    courseName = courseName.trim(),
+                    description = description.trim().ifBlank { null },
+                    dueDate = dueDate.trim(),
+                    status = status
+                )
+                repository.updateTask(updatedTask)
+            }
+            loadTasks()
+            onSuccess()
+        }
+    }
+
+    fun deleteTask(taskId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            repository.deleteTask(taskId)
+            loadTasks()
+            onSuccess()
+        }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
     private fun applyFilter(tasks: List<Task>, query: String, filter: String): List<Task> {
@@ -103,9 +183,9 @@ class TaskViewModel(
                 else -> true
             }
             val matchesQuery = query.isBlank() ||
-                task.title.contains(query, ignoreCase = true) ||
-                task.courseName.contains(query, ignoreCase = true) ||
-                (task.description?.contains(query, ignoreCase = true) == true)
+                    task.title.contains(query, ignoreCase = true) ||
+                    task.courseName.contains(query, ignoreCase = true) ||
+                    (task.description?.contains(query, ignoreCase = true) == true)
             matchesFilter && matchesQuery
         }
     }
