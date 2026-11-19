@@ -6,10 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.student_life_app.features.goal.ui.GoalDetailScreen
+import com.example.student_life_app.features.goal.ui.GoalFormScreen
 import com.example.student_life_app.features.goal.ui.GoalListScreen
 import com.example.student_life_app.features.note.ui.NoteListScreen
 import com.example.student_life_app.features.reference.ui.ReferenceListScreen
@@ -65,7 +69,42 @@ fun MainAppContainer(
 
             // Fitur 4: Target Belajar (Tubagus Fatahudin Mulkan)
             composable(ScreenRoute.GoalList.route) {
-                GoalListScreen()
+                GoalListScreen(
+                    onNavigateToDetail = { goalId ->
+                        navController.navigate(ScreenRoute.GoalDetail.createRoute(goalId))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.GoalForm.createRoute())
+                    }
+                )
+            }
+            composable(
+                route = ScreenRoute.GoalDetail.route,
+                arguments = listOf(navArgument("goalId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val goalId = backStackEntry.arguments?.getString("goalId").orEmpty()
+                GoalDetailScreen(
+                    goalId = goalId,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(ScreenRoute.GoalForm.createRoute(id)) }
+                )
+            }
+            composable(
+                route = ScreenRoute.GoalForm.route,
+                arguments = listOf(
+                    navArgument("goalId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val goalId = backStackEntry.arguments?.getString("goalId")
+                GoalFormScreen(
+                    goalId = goalId,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
             }
 
             // Fitur 5: Referensi & Link Materi (Qoid Kafi)
