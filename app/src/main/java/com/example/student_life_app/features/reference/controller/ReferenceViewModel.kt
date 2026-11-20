@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 data class ReferenceUiState(
     val isLoading: Boolean = false,
@@ -89,6 +90,75 @@ class ReferenceViewModel(
             val currentStatus = currentItem?.isFavorite ?: false
             repository.toggleFavorite(referenceId, !currentStatus)
             loadReferences()
+        }
+    }
+
+    fun createReference(
+        title: String,
+        url: String,
+        category: ReferenceCategory,
+        courseName: String,
+        notes: String?,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val error = service.validateReferenceInput(title, url, courseName)
+            if (error != null) {
+                _uiState.update { it.copy(errorMessage = error) }
+                return@launch
+            }
+            val newRef = Reference(
+                id = UUID.randomUUID().toString(),
+                userId = "default_user",
+                title = title,
+                url = url,
+                category = category,
+                courseName = courseName,
+                notes = notes,
+                isFavorite = false
+            )
+            repository.createReference(newRef)
+            loadReferences()
+            onSuccess()
+        }
+    }
+
+    fun updateReference(
+        id: String,
+        title: String,
+        url: String,
+        category: ReferenceCategory,
+        courseName: String,
+        notes: String?,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val error = service.validateReferenceInput(title, url, courseName)
+            if (error != null) {
+                _uiState.update { it.copy(errorMessage = error) }
+                return@launch
+            }
+            val current = _uiState.value.allReferences.firstOrNull { it.id == id }
+            if (current != null) {
+                val updated = current.copy(
+                    title = title,
+                    url = url,
+                    category = category,
+                    courseName = courseName,
+                    notes = notes
+                )
+                repository.updateReference(updated)
+                loadReferences()
+                onSuccess()
+            }
+        }
+    }
+
+    fun deleteReference(id: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            repository.deleteReference(id)
+            loadReferences()
+            onSuccess()
         }
     }
 

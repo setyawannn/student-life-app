@@ -14,6 +14,8 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.student_life_app.features.goal.ui.GoalListScreen
 import com.example.student_life_app.features.note.ui.NoteListScreen
+import com.example.student_life_app.features.reference.ui.ReferenceDetailScreen
+import com.example.student_life_app.features.reference.ui.ReferenceFormScreen
 import com.example.student_life_app.features.reference.ui.ReferenceListScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleDetailScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleFormScreen
@@ -109,7 +111,42 @@ fun MainAppContainer(
 
             // Fitur 5: Referensi & Link Materi (Qoid Kafi)
             composable(ScreenRoute.ReferenceList.route) {
-                ReferenceListScreen()
+                ReferenceListScreen(
+                    onNavigateToDetail = { id ->
+                        navController.navigate(ScreenRoute.ReferenceDetail.createRoute(id))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.ReferenceForm.createRoute())
+                    }
+                )
+            }
+            composable(
+                route = ScreenRoute.ReferenceDetail.route,
+                arguments = listOf(navArgument("referenceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val referenceId = backStackEntry.arguments?.getString("referenceId").orEmpty()
+                ReferenceDetailScreen(
+                    referenceId = referenceId,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(ScreenRoute.ReferenceForm.createRoute(id)) },
+                    onDeleted = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = ScreenRoute.ReferenceForm.route,
+                arguments = listOf(
+                    navArgument("referenceId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                ReferenceFormScreen(
+                    referenceId = backStackEntry.arguments?.getString("referenceId"),
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
             }
         }
     }
