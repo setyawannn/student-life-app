@@ -14,6 +14,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.student_life_app.features.goal.ui.GoalListScreen
+import com.example.student_life_app.features.note.ui.NoteDetailScreen
+import com.example.student_life_app.features.note.ui.NoteFormScreen
 import com.example.student_life_app.features.note.ui.NoteListScreen
 import com.example.student_life_app.features.reference.ui.ReferenceDetailScreen
 import com.example.student_life_app.features.reference.ui.ReferenceFormScreen
@@ -93,7 +95,31 @@ fun MainAppContainer(
 
             // Fitur 3: Catatan Belajar (Prayoga Adi Setyawan)
             composable<ScreenRoute.NoteList> {
-                NoteListScreen()
+                NoteListScreen(
+                    onNavigateToDetail = { id ->
+                        navController.navigate(ScreenRoute.NoteDetail(id))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.NoteForm())
+                    }
+                )
+            }
+            composable<ScreenRoute.NoteDetail> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.NoteDetail>()
+                NoteDetailScreen(
+                    noteId = args.noteId,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(ScreenRoute.NoteForm(id)) },
+                    onDeleted = { navController.popBackStack() }
+                )
+            }
+            composable<ScreenRoute.NoteForm> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.NoteForm>()
+                NoteFormScreen(
+                    noteId = args.noteId,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
             }
 
             // Fitur 4: Target Belajar (Tubagus Fatahudin Mulkan)

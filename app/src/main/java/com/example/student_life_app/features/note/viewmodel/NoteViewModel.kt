@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.student_life_app.core.common.Resource
-import com.example.student_life_app.features.note.data.repository.FakeNoteRepository
 import com.example.student_life_app.features.note.data.repository.NoteRepository
+import com.example.student_life_app.features.note.data.repository.SupabaseNoteRepository
 import com.example.student_life_app.features.note.model.Note
 import com.example.student_life_app.features.note.service.NoteService
 import com.example.student_life_app.features.note.service.NoteServiceImpl
@@ -19,11 +19,21 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+data class NoteFormErrors(
+    val titleError: String? = null,
+    val courseError: String? = null,
+    val contentError: String? = null
+) {
+    val hasError: Boolean
+        get() = titleError != null || courseError != null || contentError != null
+}
+
 data class NoteUiState(
     val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
     val isUploading: Boolean = false,
     val searchQuery: String = "",
-    val selectedCategory: String = "Semua (4)",
+    val selectedCategory: String = "Semua (0)",
     val categoryFilters: List<String> = emptyList(),
     val allNotes: List<Note> = emptyList(),
     val filteredNotes: List<Note> = emptyList(),
@@ -34,7 +44,7 @@ data class NoteUiState(
 )
 
 class NoteViewModel(
-    private val repository: NoteRepository = FakeNoteRepository(),
+    private val repository: NoteRepository = SupabaseNoteRepository(),
     private val service: NoteService = NoteServiceImpl()
 ) : ViewModel() {
 
@@ -42,22 +52,26 @@ class NoteViewModel(
         private set
 
     private val _isLoading = MutableStateFlow(false)
+    private val _isSaving = MutableStateFlow(false)
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _allNotes = MutableStateFlow<List<Note>>(emptyList())
     private val _searchQuery = MutableStateFlow("")
-    private val _selectedCategory = MutableStateFlow("Semua (4)")
+    private val _selectedCategory = MutableStateFlow("Semua (0)")
 
     private var loadJob: Job? = null
 
+    private val _statusFlow = combine(_isLoading, _isSaving, _errorMessage) { loading, saving, error ->
+        Triple(loading, saving, error)
+    }
+
     val uiState: StateFlow<NoteUiState> = combine(
-        _isLoading,
-        _errorMessage,
+        _statusFlow,
         _allNotes,
         _searchQuery,
         _selectedCategory
-    ) { isLoading, errorMessage, notes, query, selectedCategory ->
+    ) { (isLoading, isSaving, errorMessage), notes, query, selectedCategory ->
         val total = notes.size
-        val photoCount = notes.count { it.imageUrl != null }
+        val photoCount = notes.count { !it.imageUrl.isNullOrBlank() }
         val courseCount = notes.map { it.courseName }.distinct().size
 
         val categories = mutableListOf("Semua ($total)")
@@ -74,6 +88,8 @@ class NoteViewModel(
 
         NoteUiState(
             isLoading = isLoading,
+            isSaving = isSaving,
+            isUploading = isSaving,
             searchQuery = query,
             selectedCategory = activeCategory,
             categoryFilters = categories,
@@ -124,10 +140,62 @@ class NoteViewModel(
         _selectedCategory.value = category
     }
 
+    fun validateNoteForm(title: String, courseName: String, content: String): NoteFormErrors {
+        val error = service.validateNoteInput(title, courseName, content)
+        if (error == null) return NoteFormErrors()
+        return NoteFormErrors(
+            titleError = if (title.isBlank()) "Judul catatan tidak boleh kosong" else null,
+            courseError = if (courseName.isBlank()) "Nama mata kuliah tidak boleh kosong" else null,
+            contentError = if (content.isBlank()) "Isi catatan tidak boleh kosong" else null
+        )
+    }
+
+    fun saveNote(
+        note: Note,
+        isEdit: Boolean,
+        imageBytes: ByteArray?,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _isSaving.value = true
+            _errorMessage.value = null
+            val result = if (isEdit) {
+                repository.updateNoteWithImage(note, imageBytes)
+            } else {
+                repository.createNoteWithImage(note, imageBytes)
+            }
+            when (result) {
+                is Resource.Success -> {
+                    _isSaving.value = false
+                    onSuccess()
+                }
+                is Resource.Error -> {
+                    _isSaving.value = false
+                    _errorMessage.value = result.message
+                }
+                is Resource.Loading -> _isSaving.value = false
+            }
+        }
+    }
+
+    fun deleteNote(noteId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _errorMessage.value = null
+            when (val result = repository.deleteNote(noteId)) {
+                is Resource.Success -> onSuccess()
+                is Resource.Error -> _errorMessage.value = result.message
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
     fun onBookmarkToggle(noteId: String) {
         viewModelScope.launch {
-            repository.toggleBookmark(noteId)
-            loadNotes()
+            _errorMessage.value = null
+            when (val result = repository.toggleBookmark(noteId)) {
+                is Resource.Error -> _errorMessage.value = result.message
+                else -> Unit
+            }
         }
     }
 

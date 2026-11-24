@@ -39,6 +39,7 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }
 supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt" }
 supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt" }
+supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" }
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
 
 [plugins]
