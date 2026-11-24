@@ -11,6 +11,7 @@ import com.example.student_life_app.features.note.data.repository.SupabaseNoteRe
 import com.example.student_life_app.features.note.model.Note
 import com.example.student_life_app.features.note.service.NoteService
 import com.example.student_life_app.features.note.service.NoteServiceImpl
+import com.example.student_life_app.features.note.utils.NoteUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -205,7 +206,7 @@ class NoteViewModel(
             val matchesCategory = rawCategory.isEmpty() || note.courseName.equals(rawCategory, ignoreCase = true)
             val matchesQuery = query.isBlank() ||
                 note.title.contains(query, ignoreCase = true) ||
-                note.content.contains(query, ignoreCase = true) ||
+                NoteUtils.stripHtmlTags(note.content).contains(query, ignoreCase = true) ||
                 note.courseName.contains(query, ignoreCase = true)
             matchesCategory && matchesQuery
         }

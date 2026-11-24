@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.student_life_app.features.note.model.Note
+import com.example.student_life_app.features.note.utils.NoteUtils
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
 import com.example.student_life_app.ui.theme.SurfaceCard
@@ -128,7 +129,7 @@ fun NoteCard(
 
         // Snippet Isi Catatan
         Text(
-            text = note.content,
+            text = NoteUtils.stripHtmlTags(note.content),
             style = MaterialTheme.typography.bodySmall.copy(
                 fontSize = 12.sp,
                 color = TextSecondary,

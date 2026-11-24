@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +42,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.example.student_life_app.core.designsystem.components.AppButton
 import com.example.student_life_app.core.designsystem.components.AppOutlinedButton
 import com.example.student_life_app.core.designsystem.components.AppTopBar
@@ -217,7 +220,7 @@ fun NoteDetailContent(
                         )
                     }
 
-                    // Isi Catatan Lengkap
+                    // Isi Catatan Lengkap (RichText HTML)
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = "Isi Catatan",
@@ -225,8 +228,12 @@ fun NoteDetailContent(
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
-                        Text(
-                            text = note.content,
+                        val richTextState = rememberRichTextState()
+                        LaunchedEffect(note.content) {
+                            richTextState.setHtml(note.content)
+                        }
+                        RichText(
+                            state = richTextState,
                             fontSize = 14.sp,
                             color = TextSecondary,
                             lineHeight = 22.sp
