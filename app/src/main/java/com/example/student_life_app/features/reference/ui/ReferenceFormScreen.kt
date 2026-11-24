@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,9 +30,8 @@ import com.example.student_life_app.core.designsystem.components.AppButton
 import com.example.student_life_app.core.designsystem.components.AppTextField
 import com.example.student_life_app.core.designsystem.components.AppTopBar
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.reference.controller.ReferenceViewModel
+import com.example.student_life_app.features.reference.viewmodel.ReferenceViewModel
 import com.example.student_life_app.features.reference.model.ReferenceCategory
-import com.example.student_life_app.features.reference.service.ReferenceServiceImpl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,18 +44,17 @@ fun ReferenceFormScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isEdit = referenceId != null
     val existing = uiState.allReferences.find { it.id == referenceId }
-    val validator = remember { ReferenceServiceImpl() }
 
-    var title by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf(ReferenceCategory.JURNAL) }
-    var courseName by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var initialized by remember { mutableStateOf(false) }
+    var title by rememberSaveable { mutableStateOf("") }
+    var url by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf(ReferenceCategory.JURNAL) }
+    var courseName by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    var initialized by rememberSaveable { mutableStateOf(false) }
 
-    var titleError by remember { mutableStateOf<String?>(null) }
-    var urlError by remember { mutableStateOf<String?>(null) }
-    var courseError by remember { mutableStateOf<String?>(null) }
+    var titleError by rememberSaveable { mutableStateOf<String?>(null) }
+    var urlError by rememberSaveable { mutableStateOf<String?>(null) }
+    var courseError by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(existing) {
         if (existing != null && !initialized) {
@@ -153,12 +151,11 @@ fun ReferenceFormScreen(
             AppButton(
                 text = if (isEdit) "Simpan Perubahan" else "Simpan Referensi",
                 onClick = {
-                    val validationError = validator.validateReferenceInput(title, url, courseName)
-                    if (validationError != null) {
-                        if (title.isBlank()) titleError = "Judul tidak boleh kosong"
-                        if (url.isBlank()) urlError = "URL tidak boleh kosong"
-                        else if (!validator.isValidUrl(url)) urlError = "Format URL tidak valid"
-                        if (courseName.isBlank()) courseError = "Mata kuliah tidak boleh kosong"
+                    val errors = viewModel.validateReferenceForm(title, url, courseName)
+                    if (errors.hasError) {
+                        titleError = errors.titleError
+                        urlError = errors.urlError
+                        courseError = errors.courseError
                     } else {
                         if (isEdit && referenceId != null) {
                             viewModel.updateReference(

@@ -43,7 +43,7 @@ import com.example.student_life_app.core.designsystem.components.AppOutlinedButt
 import com.example.student_life_app.core.designsystem.components.AppTopBar
 import com.example.student_life_app.core.designsystem.components.ConfirmDialog
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.schedule.controller.ScheduleViewModel
+import com.example.student_life_app.features.schedule.viewmodel.ScheduleViewModel
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
 import com.example.student_life_app.ui.theme.PrimaryBlueContainer
@@ -88,9 +88,7 @@ fun ScheduleDetailScreen(
                 Text(text = "Jadwal tidak ditemukan", color = TextMuted)
             }
         } else {
-            val duration = viewModel.service.formatDuration(
-                viewModel.service.calculateDurationMinutes(schedule.startTime, schedule.endTime)
-            )
+            val duration = viewModel.formatScheduleDuration(schedule.startTime, schedule.endTime)
 
             Column(
                 modifier = Modifier

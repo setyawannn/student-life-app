@@ -42,18 +42,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.EmptyStateView
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.goal.controller.GoalViewModel
+import com.example.student_life_app.features.goal.viewmodel.GoalUiState
+import com.example.student_life_app.features.goal.viewmodel.GoalViewModel
 import com.example.student_life_app.features.goal.ui.components.GoalCard
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
+import com.example.student_life_app.ui.theme.StudentlifeappTheme
 import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 
 /**
- * Screen Target Belajar dengan pemisahan MVVM murni.
- * Seluruh data sasaran target dipasok dari GoalViewModel.
+ * Screen Target Belajar (Stateful): menghubungkan GoalViewModel ke GoalListContent.
  */
 @Composable
 fun GoalListScreen(
@@ -62,6 +64,27 @@ fun GoalListScreen(
     onNavigateToCreate: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    GoalListContent(
+        uiState = uiState,
+        searchQuery = viewModel.searchQuery,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToCreate = onNavigateToCreate
+    )
+}
+
+/**
+ * Konten Target Belajar (Stateless): murni menerima state dan callback tanpa ViewModel.
+ */
+@Composable
+fun GoalListContent(
+    uiState: GoalUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {}
+) {
 
     StudentLifeScaffold(
         topBar = {
@@ -115,8 +138,8 @@ fun GoalListScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
                                 text = "Cari sasaran target belajar...",
@@ -245,5 +268,17 @@ fun GoalSummaryStatCard(
                 fontWeight = FontWeight.Medium
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GoalListContentPreview() {
+    StudentlifeappTheme {
+        GoalListContent(
+            uiState = GoalUiState(),
+            searchQuery = "",
+            onSearchQueryChange = {}
+        )
     }
 }

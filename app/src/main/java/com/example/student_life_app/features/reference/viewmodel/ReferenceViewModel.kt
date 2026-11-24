@@ -1,5 +1,8 @@
-package com.example.student_life_app.features.reference.controller
+package com.example.student_life_app.features.reference.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.student_life_app.core.common.Resource
@@ -9,12 +12,23 @@ import com.example.student_life_app.features.reference.model.Reference
 import com.example.student_life_app.features.reference.model.ReferenceCategory
 import com.example.student_life_app.features.reference.service.ReferenceService
 import com.example.student_life_app.features.reference.service.ReferenceServiceImpl
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+data class ReferenceFormErrors(
+    val titleError: String? = null,
+    val urlError: String? = null,
+    val courseError: String? = null
+) {
+    val hasError: Boolean
+        get() = titleError != null || urlError != null || courseError != null
+}
 
 data class ReferenceUiState(
     val isLoading: Boolean = false,
@@ -32,61 +46,79 @@ class ReferenceViewModel(
     private val service: ReferenceService = ReferenceServiceImpl()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ReferenceUiState())
-    val uiState: StateFlow<ReferenceUiState> = _uiState.asStateFlow()
+    var searchQuery by mutableStateOf("")
+        private set
+
+    private val _isLoading = MutableStateFlow(false)
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _allReferences = MutableStateFlow<List<Reference>>(emptyList())
+    private val _searchQuery = MutableStateFlow("")
+    private val _selectedCategory = MutableStateFlow<ReferenceCategory?>(null)
+
+    private var loadJob: Job? = null
+
+    val uiState: StateFlow<ReferenceUiState> = combine(
+        _isLoading,
+        _errorMessage,
+        _allReferences,
+        _searchQuery,
+        _selectedCategory
+    ) { isLoading, errorMessage, refs, query, category ->
+        val total = refs.size
+        val favCount = refs.count { it.isFavorite }
+        ReferenceUiState(
+            isLoading = isLoading,
+            searchQuery = query,
+            selectedCategory = category,
+            allReferences = refs,
+            filteredReferences = applyFilter(refs, query, category),
+            totalCount = total,
+            favoriteCount = favCount,
+            errorMessage = errorMessage
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ReferenceUiState()
+    )
 
     init {
         loadReferences("default_user")
     }
 
     fun loadReferences(userId: String = "default_user") {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
             repository.getReferences(userId).collect { resource ->
                 when (resource) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                    is Resource.Loading -> _isLoading.value = true
                     is Resource.Success -> {
-                        val refs = resource.data
-                        val total = refs.size
-                        val favCount = refs.count { it.isFavorite }
-
-                        _uiState.update { current ->
-                            current.copy(
-                                isLoading = false,
-                                allReferences = refs,
-                                totalCount = total,
-                                favoriteCount = favCount,
-                                filteredReferences = applyFilter(refs, current.searchQuery, current.selectedCategory)
-                            )
-                        }
+                        _allReferences.value = resource.data
+                        _isLoading.value = false
                     }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = resource.message) }
+                    is Resource.Error -> {
+                        _errorMessage.value = resource.message
+                        _isLoading.value = false
+                    }
                 }
             }
         }
     }
 
     fun onSearchQueryChange(query: String) {
-        _uiState.update { current ->
-            current.copy(
-                searchQuery = query,
-                filteredReferences = applyFilter(current.allReferences, query, current.selectedCategory)
-            )
-        }
+        searchQuery = query
+        _searchQuery.value = query
     }
 
     fun onCategorySelect(category: ReferenceCategory?) {
-        _uiState.update { current ->
-            current.copy(
-                selectedCategory = category,
-                filteredReferences = applyFilter(current.allReferences, current.searchQuery, category)
-            )
-        }
+        _selectedCategory.value = category
     }
 
     fun toggleFavorite(referenceId: String) {
         viewModelScope.launch {
-            val currentItem = _uiState.value.allReferences.firstOrNull { it.id == referenceId }
+            val currentItem = _allReferences.value.firstOrNull { it.id == referenceId }
             val currentStatus = currentItem?.isFavorite ?: false
             repository.toggleFavorite(referenceId, !currentStatus)
             loadReferences()
@@ -104,7 +136,7 @@ class ReferenceViewModel(
         viewModelScope.launch {
             val error = service.validateReferenceInput(title, url, courseName)
             if (error != null) {
-                _uiState.update { it.copy(errorMessage = error) }
+                _errorMessage.value = error
                 return@launch
             }
             val newRef = Reference(
@@ -135,10 +167,10 @@ class ReferenceViewModel(
         viewModelScope.launch {
             val error = service.validateReferenceInput(title, url, courseName)
             if (error != null) {
-                _uiState.update { it.copy(errorMessage = error) }
+                _errorMessage.value = error
                 return@launch
             }
-            val current = _uiState.value.allReferences.firstOrNull { it.id == id }
+            val current = _allReferences.value.firstOrNull { it.id == id }
             if (current != null) {
                 val updated = current.copy(
                     title = title,
@@ -160,6 +192,24 @@ class ReferenceViewModel(
             loadReferences()
             onSuccess()
         }
+    }
+
+    fun validateReferenceForm(title: String, url: String, courseName: String): ReferenceFormErrors {
+        val validationError = service.validateReferenceInput(title, url, courseName)
+        if (validationError == null) return ReferenceFormErrors()
+
+        val titleErr = if (title.isBlank()) "Judul tidak boleh kosong" else null
+        val urlErr = when {
+            url.isBlank() -> "URL tidak boleh kosong"
+            !service.isValidUrl(url) -> "Format URL tidak valid"
+            else -> null
+        }
+        val courseErr = if (courseName.isBlank()) "Mata kuliah tidak boleh kosong" else null
+        return ReferenceFormErrors(
+            titleError = titleErr,
+            urlError = urlErr,
+            courseError = courseErr
+        )
     }
 
     private fun applyFilter(

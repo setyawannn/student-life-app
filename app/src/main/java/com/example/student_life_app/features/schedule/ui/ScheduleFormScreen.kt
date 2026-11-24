@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +30,7 @@ import com.example.student_life_app.core.designsystem.components.AppButton
 import com.example.student_life_app.core.designsystem.components.AppTextField
 import com.example.student_life_app.core.designsystem.components.AppTopBar
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.schedule.controller.ScheduleViewModel
+import com.example.student_life_app.features.schedule.viewmodel.ScheduleViewModel
 import com.example.student_life_app.features.schedule.model.DayOfWeekEnum
 import com.example.student_life_app.features.schedule.model.Schedule
 import java.util.UUID
@@ -50,18 +50,18 @@ fun ScheduleFormScreen(
     val isEdit = scheduleId != null
     val existing = uiState.schedules.find { it.id == scheduleId }
 
-    var courseName by remember { mutableStateOf("") }
-    var day by remember { mutableStateOf(DayOfWeekEnum.SENIN) }
-    var startTime by remember { mutableStateOf("") }
-    var endTime by remember { mutableStateOf("") }
-    var room by remember { mutableStateOf("") }
-    var lecturer by remember { mutableStateOf("") }
-    var initialized by remember { mutableStateOf(false) }
+    var courseName by rememberSaveable { mutableStateOf("") }
+    var day by rememberSaveable { mutableStateOf(DayOfWeekEnum.SENIN) }
+    var startTime by rememberSaveable { mutableStateOf("") }
+    var endTime by rememberSaveable { mutableStateOf("") }
+    var room by rememberSaveable { mutableStateOf("") }
+    var lecturer by rememberSaveable { mutableStateOf("") }
+    var initialized by rememberSaveable { mutableStateOf(false) }
 
-    var nameError by remember { mutableStateOf<String?>(null) }
-    var roomError by remember { mutableStateOf<String?>(null) }
-    var lecturerError by remember { mutableStateOf<String?>(null) }
-    var timeError by remember { mutableStateOf<String?>(null) }
+    var nameError by rememberSaveable { mutableStateOf<String?>(null) }
+    var roomError by rememberSaveable { mutableStateOf<String?>(null) }
+    var lecturerError by rememberSaveable { mutableStateOf<String?>(null) }
+    var timeError by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Mode ubah: isi form sekali dengan data jadwal yang dipilih
     LaunchedEffect(existing) {
@@ -183,12 +183,11 @@ fun ScheduleFormScreen(
                 text = if (uiState.isSaving) "Menyimpan..." else "Simpan Jadwal",
                 enabled = !uiState.isSaving,
                 onClick = {
-                    val service = viewModel.service
                     // Validasi per kolom supaya pesan error muncul tepat di bawah kolomnya
                     nameError = if (courseName.isBlank()) "Nama mata kuliah tidak boleh kosong" else null
                     roomError = if (room.isBlank()) "Ruang kelas tidak boleh kosong" else null
                     lecturerError = if (lecturer.isBlank()) "Nama dosen pengampu tidak boleh kosong" else null
-                    timeError = service.validateTimeRange(startTime.trim(), endTime.trim())
+                    timeError = viewModel.validateTimeRange(startTime.trim(), endTime.trim())
 
                     val valid = nameError == null && roomError == null &&
                             lecturerError == null && timeError == null

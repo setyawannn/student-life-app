@@ -1,57 +1,40 @@
 package com.example.student_life_app.core.navigation
 
+import kotlinx.serialization.Serializable
+
 /**
- * Definisi rute navigasi aplikasi StudentLife.
- * Digunakan bersama Jetpack Navigation Compose untuk alur multi-screen yang terstruktur.
+ * Definisi rute navigasi aplikasi StudentLife berbasis Type-Safe Navigation Compose.
+ * Digunakan bersama Jetpack Navigation Compose dan Kotlinx Serialization untuk alur multi-screen yang aman dari typo.
  */
-sealed class ScreenRoute(val route: String) {
+@Serializable
+sealed interface ScreenRoute {
     // Auth & Profile
-    data object Login : ScreenRoute("login")
-    data object Register : ScreenRoute("register")
-    data object Profile : ScreenRoute("profile")
+    @Serializable data object Login : ScreenRoute
+    @Serializable data object Register : ScreenRoute
+    @Serializable data object Profile : ScreenRoute
 
     // Fitur 1: Manajemen Tugas Kuliah (Gangsar Wijayanto)
-    data object TaskList : ScreenRoute("task_list")
-    data object TaskDetail : ScreenRoute("task_detail/{taskId}") {
-        fun createRoute(taskId: String) = "task_detail/$taskId"
-    }
-    data object TaskForm : ScreenRoute("task_form?taskId={taskId}") {
-        fun createRoute(taskId: String? = null) = if (taskId != null) "task_form?taskId=$taskId" else "task_form"
-    }
+    @Serializable data object TaskList : ScreenRoute
+    @Serializable data class TaskDetail(val taskId: String) : ScreenRoute
+    @Serializable data class TaskForm(val taskId: String? = null) : ScreenRoute
 
     // Fitur 2: Manajemen Jadwal Kuliah (Muhammad Abdillah)
-    data object ScheduleList : ScreenRoute("schedule_list")
-    data object ScheduleDetail : ScreenRoute("schedule_detail/{scheduleId}") {
-        fun createRoute(scheduleId: String) = "schedule_detail/$scheduleId"
-    }
-    data object ScheduleForm : ScreenRoute("schedule_form?scheduleId={scheduleId}") {
-        fun createRoute(scheduleId: String? = null) = if (scheduleId != null) "schedule_form?scheduleId=$scheduleId" else "schedule_form"
-    }
+    @Serializable data object ScheduleList : ScreenRoute
+    @Serializable data class ScheduleDetail(val scheduleId: String) : ScreenRoute
+    @Serializable data class ScheduleForm(val scheduleId: String? = null) : ScreenRoute
 
     // Fitur 3: Catatan Belajar (Prayoga Adi Setyawan)
-    data object NoteList : ScreenRoute("note_list")
-    data object NoteDetail : ScreenRoute("note_detail/{noteId}") {
-        fun createRoute(noteId: String) = "note_detail/$noteId"
-    }
-    data object NoteForm : ScreenRoute("note_form?noteId={noteId}") {
-        fun createRoute(noteId: String? = null) = if (noteId != null) "note_form?noteId=$noteId" else "note_form"
-    }
+    @Serializable data object NoteList : ScreenRoute
+    @Serializable data class NoteDetail(val noteId: String) : ScreenRoute
+    @Serializable data class NoteForm(val noteId: String? = null) : ScreenRoute
 
     // Fitur 4: Manajemen Target Belajar (Tubagus Fatahudin Mulkan)
-    data object GoalList : ScreenRoute("goal_list")
-    data object GoalDetail : ScreenRoute("goal_detail/{goalId}") {
-        fun createRoute(goalId: String) = "goal_detail/$goalId"
-    }
-    data object GoalForm : ScreenRoute("goal_form?goalId={goalId}") {
-        fun createRoute(goalId: String? = null) = if (goalId != null) "goal_form?goalId=$goalId" else "goal_form"
-    }
+    @Serializable data object GoalList : ScreenRoute
+    @Serializable data class GoalDetail(val goalId: String) : ScreenRoute
+    @Serializable data class GoalForm(val goalId: String? = null) : ScreenRoute
 
     // Fitur 5: Referensi & Link Materi (Qoid Kafi)
-    data object ReferenceList : ScreenRoute("reference_list")
-    data object ReferenceDetail : ScreenRoute("reference_detail/{referenceId}") {
-        fun createRoute(referenceId: String) = "reference_detail/$referenceId"
-    }
-    data object ReferenceForm : ScreenRoute("reference_form?referenceId={referenceId}") {
-        fun createRoute(referenceId: String? = null) = if (referenceId != null) "reference_form?referenceId=$referenceId" else "reference_form"
-    }
+    @Serializable data object ReferenceList : ScreenRoute
+    @Serializable data class ReferenceDetail(val referenceId: String) : ScreenRoute
+    @Serializable data class ReferenceForm(val referenceId: String? = null) : ScreenRoute
 }

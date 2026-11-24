@@ -45,24 +45,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.note.controller.NoteViewModel
+import com.example.student_life_app.features.note.viewmodel.NoteUiState
+import com.example.student_life_app.features.note.viewmodel.NoteViewModel
 import com.example.student_life_app.features.note.ui.components.NoteCard
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
+import com.example.student_life_app.ui.theme.StudentlifeappTheme
 import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
 
 /**
- * Screen Catatan Belajar dengan penerapan murni arsitektur MVVM (Model-View-ViewModel).
- * Seluruh state, filter, pencarian, dan data dipisahkan sepenuhnya di NoteViewModel.
+ * Screen Catatan Belajar (Stateful): menghubungkan NoteViewModel ke NoteListContent.
  */
 @Composable
 fun NoteListScreen(
@@ -71,6 +73,31 @@ fun NoteListScreen(
     onNavigateToCreate: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    NoteListContent(
+        uiState = uiState,
+        searchQuery = viewModel.searchQuery,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onCategorySelect = viewModel::onCategorySelect,
+        onBookmarkToggle = viewModel::onBookmarkToggle,
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToCreate = onNavigateToCreate
+    )
+}
+
+/**
+ * Konten Catatan Belajar (Stateless): murni menerima state dan callback tanpa ViewModel.
+ */
+@Composable
+fun NoteListContent(
+    uiState: NoteUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onCategorySelect: (String) -> Unit,
+    onBookmarkToggle: (String) -> Unit,
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {}
+) {
 
     StudentLifeScaffold(
         topBar = {
@@ -127,8 +154,8 @@ fun NoteListScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
                                 text = "Cari judul atau isi catatan...",
@@ -177,7 +204,7 @@ fun NoteListScreen(
                                     if (isSelected) PrimaryBlue else BorderOutlineVariant,
                                     RoundedCornerShape(20.dp)
                                 )
-                                .clickable { viewModel.onCategorySelect(filter) }
+                                .clickable { onCategorySelect(filter) }
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
@@ -225,7 +252,7 @@ fun NoteListScreen(
             items(uiState.filteredNotes, key = { it.id }) { note ->
                 NoteCard(
                     note = note,
-                    onBookmarkClick = { viewModel.onBookmarkToggle(note.id) },
+                    onBookmarkClick = { onBookmarkToggle(note.id) },
                     onClick = { onNavigateToDetail(note.id) }
                 )
             }
@@ -281,5 +308,19 @@ fun SummaryStatCard(
                 fontWeight = FontWeight.Medium
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NoteListContentPreview() {
+    StudentlifeappTheme {
+        NoteListContent(
+            uiState = NoteUiState(),
+            searchQuery = "",
+            onSearchQueryChange = {},
+            onCategorySelect = {},
+            onBookmarkToggle = {}
+        )
     }
 }

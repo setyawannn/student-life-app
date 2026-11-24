@@ -49,7 +49,7 @@ import com.example.student_life_app.core.designsystem.components.AppOutlinedButt
 import com.example.student_life_app.core.designsystem.components.AppTopBar
 import com.example.student_life_app.core.designsystem.components.ConfirmDialog
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.reference.controller.ReferenceViewModel
+import com.example.student_life_app.features.reference.viewmodel.ReferenceViewModel
 import com.example.student_life_app.features.reference.model.ReferenceCategory
 import com.example.student_life_app.features.reference.utils.ReferenceUtils
 import com.example.student_life_app.ui.theme.BorderOutlineVariant

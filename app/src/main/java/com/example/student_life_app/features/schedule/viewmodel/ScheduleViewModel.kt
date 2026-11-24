@@ -1,10 +1,11 @@
-package com.example.student_life_app.features.schedule.controller
+package com.example.student_life_app.features.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.student_life_app.core.common.Resource
 import com.example.student_life_app.features.schedule.data.repository.ScheduleRepository
 import com.example.student_life_app.features.schedule.data.repository.SupabaseScheduleRepository
+import com.example.student_life_app.features.schedule.model.DayOfWeekEnum
 import com.example.student_life_app.features.schedule.model.Schedule
 import com.example.student_life_app.features.schedule.service.ScheduleService
 import com.example.student_life_app.features.schedule.service.ScheduleServiceImpl
@@ -16,20 +17,21 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * State layar Jadwal. `schedules` berisi SEMUA jadwal (semua hari);
- * pemilahan per hari dilakukan di UI (filter berdasarkan dayOfWeek).
+ * State layar Jadwal. `schedules` berisi SEMUA jadwal (semua hari),
+ * sementara `schedulesByDay` berisi jadwal yang sudah dikelompokkan per hari dan diurutkan.
  */
 data class ScheduleUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val schedules: List<Schedule> = emptyList(),
+    val schedulesByDay: Map<DayOfWeekEnum, List<Schedule>> = emptyMap(),
     val errorMessage: String? = null
 )
 
 class ScheduleViewModel(
     // Untuk kembali ke data dummy, ganti dengan FakeScheduleRepository()
     private val repository: ScheduleRepository = SupabaseScheduleRepository(),
-    val service: ScheduleService = ScheduleServiceImpl(),
+    private val service: ScheduleService = ScheduleServiceImpl(),
     private val userId: String = "default_user"
 ) : ViewModel() {
 
@@ -49,8 +51,18 @@ class ScheduleViewModel(
             repository.getSchedules(userId).collect { resource ->
                 when (resource) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-                    is Resource.Success -> _uiState.update {
-                        it.copy(isLoading = false, schedules = resource.data, errorMessage = null)
+                    is Resource.Success -> {
+                        val grouped = resource.data
+                            .groupBy { it.dayOfWeek }
+                            .mapValues { (_, list) -> service.sortSchedulesByTime(list) }
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                schedules = resource.data,
+                                schedulesByDay = grouped,
+                                errorMessage = null
+                            )
+                        }
                     }
                     is Resource.Error -> _uiState.update {
                         it.copy(isLoading = false, errorMessage = resource.message)
@@ -59,6 +71,12 @@ class ScheduleViewModel(
             }
         }
     }
+
+    fun validateTimeRange(startTime: String, endTime: String): String? =
+        service.validateTimeRange(startTime, endTime)
+
+    fun formatScheduleDuration(startTime: String, endTime: String): String =
+        service.formatDuration(service.calculateDurationMinutes(startTime, endTime))
 
     fun saveSchedule(schedule: Schedule, isEdit: Boolean, onSuccess: () -> Unit) {
         viewModelScope.launch {

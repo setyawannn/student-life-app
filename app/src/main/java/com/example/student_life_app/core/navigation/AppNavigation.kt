@@ -5,13 +5,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.example.student_life_app.features.goal.ui.GoalListScreen
 import com.example.student_life_app.features.note.ui.NoteListScreen
 import com.example.student_life_app.features.reference.ui.ReferenceDetailScreen
@@ -27,18 +28,20 @@ fun MainAppContainer(
     navController: NavHostController = rememberNavController()
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentDestination = navBackStackEntry?.destination
 
     Scaffold(
         bottomBar = {
             // Tampilkan BottomNavBar jika berada pada halaman utama list
-            val isMainBottomRoute = bottomNavItems.any { it.route == currentRoute }
-            if (isMainBottomRoute || currentRoute == null) {
+            val isMainBottomRoute = bottomNavItems.any { item ->
+                currentDestination?.hierarchy?.any { it.hasRoute(item.route::class) } == true
+            }
+            if (isMainBottomRoute || currentDestination == null) {
                 StudentLifeBottomNavBar(
-                    currentRoute = currentRoute ?: ScreenRoute.TaskList.route,
+                    currentDestination = currentDestination,
                     onNavigateToRoute = { route ->
                         navController.navigate(route) {
-                            popUpTo(ScreenRoute.TaskList.route) {
+                            popUpTo<ScreenRoute.TaskList> {
                                 saveState = true
                             }
                             launchSingleTop = true
@@ -51,99 +54,77 @@ fun MainAppContainer(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = ScreenRoute.TaskList.route,
+            startDestination = ScreenRoute.TaskList,
             modifier = Modifier.padding(innerPadding)
         ) {
             // Fitur 1: Manajemen Tugas Kuliah (Gangsar Wijayanto)
-            composable(ScreenRoute.TaskList.route) {
+            composable<ScreenRoute.TaskList> {
                 TaskListScreen()
             }
 
             // Fitur 2: Manajemen Jadwal Kuliah (Muhammad Abdillah)
-            composable(ScreenRoute.ScheduleList.route) {
+            composable<ScreenRoute.ScheduleList> {
                 ScheduleListScreen(
                     onNavigateToDetail = { id ->
-                        navController.navigate(ScreenRoute.ScheduleDetail.createRoute(id))
+                        navController.navigate(ScreenRoute.ScheduleDetail(id))
                     },
                     onNavigateToCreate = {
-                        navController.navigate(ScreenRoute.ScheduleForm.createRoute())
+                        navController.navigate(ScreenRoute.ScheduleForm())
                     }
                 )
             }
-            composable(
-                route = ScreenRoute.ScheduleDetail.route,
-                arguments = listOf(navArgument("scheduleId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val scheduleId = backStackEntry.arguments?.getString("scheduleId").orEmpty()
+            composable<ScreenRoute.ScheduleDetail> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.ScheduleDetail>()
                 ScheduleDetailScreen(
-                    scheduleId = scheduleId,
+                    scheduleId = args.scheduleId,
                     onBack = { navController.popBackStack() },
-                    onEdit = { id -> navController.navigate(ScreenRoute.ScheduleForm.createRoute(id)) },
+                    onEdit = { id -> navController.navigate(ScreenRoute.ScheduleForm(id)) },
                     onDeleted = { navController.popBackStack() }
                 )
             }
-            composable(
-                route = ScreenRoute.ScheduleForm.route,
-                arguments = listOf(
-                    navArgument("scheduleId") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
-                )
-            ) { backStackEntry ->
+            composable<ScreenRoute.ScheduleForm> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.ScheduleForm>()
                 ScheduleFormScreen(
-                    scheduleId = backStackEntry.arguments?.getString("scheduleId"),
+                    scheduleId = args.scheduleId,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
                 )
             }
 
             // Fitur 3: Catatan Belajar (Prayoga Adi Setyawan)
-            composable(ScreenRoute.NoteList.route) {
+            composable<ScreenRoute.NoteList> {
                 NoteListScreen()
             }
 
             // Fitur 4: Target Belajar (Tubagus Fatahudin Mulkan)
-            composable(ScreenRoute.GoalList.route) {
+            composable<ScreenRoute.GoalList> {
                 GoalListScreen()
             }
 
             // Fitur 5: Referensi & Link Materi (Qoid Kafi)
-            composable(ScreenRoute.ReferenceList.route) {
+            composable<ScreenRoute.ReferenceList> {
                 ReferenceListScreen(
                     onNavigateToDetail = { id ->
-                        navController.navigate(ScreenRoute.ReferenceDetail.createRoute(id))
+                        navController.navigate(ScreenRoute.ReferenceDetail(id))
                     },
                     onNavigateToCreate = {
-                        navController.navigate(ScreenRoute.ReferenceForm.createRoute())
+                        navController.navigate(ScreenRoute.ReferenceForm())
                     }
                 )
             }
-            composable(
-                route = ScreenRoute.ReferenceDetail.route,
-                arguments = listOf(navArgument("referenceId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val referenceId = backStackEntry.arguments?.getString("referenceId").orEmpty()
+            composable<ScreenRoute.ReferenceDetail> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.ReferenceDetail>()
                 ReferenceDetailScreen(
-                    referenceId = referenceId,
+                    referenceId = args.referenceId,
                     onBack = { navController.popBackStack() },
-                    onEdit = { id -> navController.navigate(ScreenRoute.ReferenceForm.createRoute(id)) },
+                    onEdit = { id -> navController.navigate(ScreenRoute.ReferenceForm(id)) },
                     onDeleted = { navController.popBackStack() }
                 )
             }
-            composable(
-                route = ScreenRoute.ReferenceForm.route,
-                arguments = listOf(
-                    navArgument("referenceId") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
-                )
-            ) { backStackEntry ->
+            composable<ScreenRoute.ReferenceForm> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.ReferenceForm>()
                 ReferenceFormScreen(
-                    referenceId = backStackEntry.arguments?.getString("referenceId"),
+                    referenceId = args.referenceId,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
                 )

@@ -33,23 +33,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.EmptyStateView
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.schedule.controller.ScheduleViewModel
+import com.example.student_life_app.features.schedule.viewmodel.ScheduleUiState
+import com.example.student_life_app.features.schedule.viewmodel.ScheduleViewModel
 import com.example.student_life_app.features.schedule.model.DayOfWeekEnum
 import com.example.student_life_app.features.schedule.ui.components.ScheduleCard
 import com.example.student_life_app.ui.theme.PrimaryBlue
+import com.example.student_life_app.ui.theme.StudentlifeappTheme
 import kotlinx.coroutines.launch
 
 /**
- * Layar Daftar Jadwal Kuliah: tab hari (HorizontalPager) + daftar kartu (LazyColumn).
- * Semua jadwal dimuat sekali oleh ViewModel, lalu tiap halaman pager memfilter harinya sendiri.
+ * Layar Daftar Jadwal Kuliah (Stateful): menghubungkan ScheduleViewModel ke ScheduleListContent.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleListScreen(
     viewModel: ScheduleViewModel = viewModel(),
@@ -57,6 +58,26 @@ fun ScheduleListScreen(
     onNavigateToCreate: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ScheduleListContent(
+        uiState = uiState,
+        onRetry = { viewModel.loadSchedules() },
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToCreate = onNavigateToCreate
+    )
+}
+
+/**
+ * Konten Daftar Jadwal Kuliah (Stateless): mudah di-Preview dan diuji tanpa ketergantungan ViewModel.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScheduleListContent(
+    uiState: ScheduleUiState,
+    onRetry: () -> Unit = {},
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {}
+) {
     val days = DayOfWeekEnum.entries
     val pagerState = rememberPagerState(pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
@@ -133,7 +154,7 @@ fun ScheduleListScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadSchedules() }) {
+                        Button(onClick = onRetry) {
                             Text("Coba Lagi")
                         }
                     }
@@ -144,10 +165,8 @@ fun ScheduleListScreen(
                         modifier = Modifier.fillMaxSize()
                     ) { page ->
                         val currentDay = days[page]
-                        // Filter jadwal khusus hari pada halaman pager ini
-                        val daySchedules = viewModel.service.sortSchedulesByTime(
-                            uiState.schedules.filter { it.dayOfWeek == currentDay }
-                        )
+                        // Ambil jadwal yang sudah difilter dan diurutkan oleh ViewModel
+                        val daySchedules = uiState.schedulesByDay[currentDay].orEmpty()
 
                         if (daySchedules.isEmpty()) {
                             Box(modifier = Modifier.fillMaxSize()) {
@@ -177,5 +196,13 @@ fun ScheduleListScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ScheduleListContentPreview() {
+    StudentlifeappTheme {
+        ScheduleListContent(uiState = ScheduleUiState())
     }
 }
