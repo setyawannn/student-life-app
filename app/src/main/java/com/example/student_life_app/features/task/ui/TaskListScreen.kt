@@ -68,7 +68,8 @@ import com.example.student_life_app.ui.theme.TextSecondary
 fun TaskListScreen(
     viewModel: TaskViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -79,7 +80,8 @@ fun TaskListScreen(
         onFilterSelect = viewModel::onFilterSelect,
         onToggleTaskCompletion = viewModel::toggleTaskCompletion,
         onNavigateToDetail = onNavigateToDetail,
-        onNavigateToCreate = onNavigateToCreate
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
     )
 }
 
@@ -94,14 +96,15 @@ fun TaskListContent(
     onFilterSelect: (String) -> Unit,
     onToggleTaskCompletion: (Task) -> Unit,
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Daftar Tugas",
-                badgeIcon = Icons.Outlined.CheckCircle
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {

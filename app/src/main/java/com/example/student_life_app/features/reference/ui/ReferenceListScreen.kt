@@ -62,7 +62,8 @@ import com.example.student_life_app.ui.theme.TextSecondary
 fun ReferenceListScreen(
     viewModel: ReferenceViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -73,7 +74,8 @@ fun ReferenceListScreen(
         onCategorySelect = viewModel::onCategorySelect,
         onToggleFavorite = viewModel::toggleFavorite,
         onNavigateToDetail = onNavigateToDetail,
-        onNavigateToCreate = onNavigateToCreate
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
     )
 }
 
@@ -88,7 +90,8 @@ fun ReferenceListContent(
     onCategorySelect: (ReferenceCategory?) -> Unit,
     onToggleFavorite: (String) -> Unit,
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val categoryList = listOf("Semua") + ReferenceCategory.entries.map { it.name }
 
@@ -96,7 +99,7 @@ fun ReferenceListContent(
         topBar = {
             StudentLifeHeader(
                 title = "Referensi Materi",
-                badgeIcon = Icons.Outlined.FolderOpen
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {

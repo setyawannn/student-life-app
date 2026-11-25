@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 
@@ -51,11 +52,20 @@ fun AppTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = placeholder?.let { { Text(text = it) } },
+            placeholder = placeholder?.let {
+                {
+                    Text(
+                        text = it,
+                        maxLines = if (singleLine) 1 else maxLines,
+                        softWrap = !singleLine,
+                        overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip
+                    )
+                }
+            },
             isError = isError,
             singleLine = singleLine,
-            minLines = minLines,
-            maxLines = maxLines,
+            minLines = if (singleLine) 1 else minLines,
+            maxLines = if (singleLine) 1 else maxLines,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,

@@ -34,17 +34,12 @@ object SupabaseManager {
 
     /**
      * Memastikan ada pengguna yang sedang masuk, lalu mengembalikan id-nya.
-     * Sementara belum ada layar Login, aplikasi masuk sebagai pengguna anonim
-     * (perlu "Allow anonymous sign-ins" aktif di dashboard Supabase).
-     * Saat fitur Login sudah ada, cukup ganti isi fungsi ini.
+     * Melempar IllegalStateException jika belum ada sesi aktif.
      */
     suspend fun ensureUserId(): String = authMutex.withLock {
         val auth = client.auth
         auth.awaitInitialization()
-        if (auth.currentSessionOrNull() == null) {
-            auth.signInAnonymously()
-        }
         auth.currentUserOrNull()?.id
-            ?: error("Gagal mendapatkan pengguna. Cek pengaturan Auth di Supabase.")
+            ?: error("Sesi tidak ditemukan. Silakan masuk terlebih dahulu.")
     }
 }

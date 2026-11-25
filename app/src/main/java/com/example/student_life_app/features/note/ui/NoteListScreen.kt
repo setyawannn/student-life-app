@@ -75,7 +75,8 @@ import com.example.student_life_app.ui.theme.TextSecondary
 fun NoteListScreen(
     viewModel: NoteViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -87,7 +88,8 @@ fun NoteListScreen(
         onBookmarkToggle = viewModel::onBookmarkToggle,
         onRetry = { viewModel.loadNotes() },
         onNavigateToDetail = onNavigateToDetail,
-        onNavigateToCreate = onNavigateToCreate
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
     )
 }
 
@@ -103,14 +105,15 @@ fun NoteListContent(
     onBookmarkToggle: (String) -> Unit,
     onRetry: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Catatan Belajar",
-                badgeIcon = Icons.AutoMirrored.Outlined.MenuBook
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {

@@ -20,6 +20,7 @@ fun StudentLifeScaffold(
     topBar: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -29,6 +30,7 @@ fun StudentLifeScaffold(
         topBar = topBar,
         bottomBar = bottomBar,
         floatingActionButton = floatingActionButton,
+        snackbarHost = snackbarHost,
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Box(

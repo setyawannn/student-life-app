@@ -55,7 +55,8 @@ import kotlinx.coroutines.launch
 fun ScheduleListScreen(
     viewModel: ScheduleViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -63,7 +64,8 @@ fun ScheduleListScreen(
         uiState = uiState,
         onRetry = { viewModel.loadSchedules() },
         onNavigateToDetail = onNavigateToDetail,
-        onNavigateToCreate = onNavigateToCreate
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
     )
 }
 
@@ -76,7 +78,8 @@ fun ScheduleListContent(
     uiState: ScheduleUiState,
     onRetry: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val days = DayOfWeekEnum.entries
     val pagerState = rememberPagerState(pageCount = { days.size })
@@ -86,7 +89,7 @@ fun ScheduleListContent(
         topBar = {
             StudentLifeHeader(
                 title = "Jadwal Kuliah",
-                badgeIcon = Icons.Outlined.CalendarMonth
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {

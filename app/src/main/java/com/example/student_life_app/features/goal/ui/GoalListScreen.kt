@@ -61,7 +61,8 @@ import com.example.student_life_app.ui.theme.TextPrimary
 fun GoalListScreen(
     viewModel: GoalViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -70,7 +71,8 @@ fun GoalListScreen(
         searchQuery = viewModel.searchQuery,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onNavigateToDetail = onNavigateToDetail,
-        onNavigateToCreate = onNavigateToCreate
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
     )
 }
 
@@ -83,14 +85,15 @@ fun GoalListContent(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Target Belajar",
-                badgeIcon = Icons.Outlined.TrackChanges
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {
