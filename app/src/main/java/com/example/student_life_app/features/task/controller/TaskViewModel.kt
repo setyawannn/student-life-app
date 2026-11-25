@@ -3,7 +3,7 @@ package com.example.student_life_app.features.task.controller
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.student_life_app.core.common.Resource
-import com.example.student_life_app.features.task.data.repository.FakeTaskRepository
+import com.example.student_life_app.features.task.data.repository.SupabaseTaskRepository
 import com.example.student_life_app.features.task.data.repository.TaskRepository
 import com.example.student_life_app.features.task.model.Task
 import com.example.student_life_app.features.task.model.TaskStatus
@@ -31,7 +31,7 @@ data class TaskListUiState(
 )
 
 class TaskViewModel(
-    private val repository: TaskRepository = FakeTaskRepository(),
+    private val repository: TaskRepository = SupabaseTaskRepository(),
     private val service: TaskService = TaskServiceImpl()
 ) : ViewModel() {
 
