@@ -30,6 +30,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
 import com.example.student_life_app.ui.theme.SurfaceCard
@@ -37,17 +40,17 @@ import com.example.student_life_app.ui.theme.TextMuted
 
 data class BottomNavItem(
     val title: String,
-    val route: String,
+    val route: ScreenRoute,
     val outlineIcon: ImageVector
 )
 
 // Daftar menu Bottom Bar dengan ikon OUTLINE sesuai standar desain
 val bottomNavItems = listOf(
-    BottomNavItem("Tugas", ScreenRoute.TaskList.route, Icons.Outlined.CheckCircle),
-    BottomNavItem("Jadwal", ScreenRoute.ScheduleList.route, Icons.Outlined.CalendarMonth),
-    BottomNavItem("Catatan", ScreenRoute.NoteList.route, Icons.AutoMirrored.Outlined.MenuBook),
-    BottomNavItem("Target", ScreenRoute.GoalList.route, Icons.Outlined.TrackChanges),
-    BottomNavItem("Referensi", ScreenRoute.ReferenceList.route, Icons.Outlined.FolderOpen)
+    BottomNavItem("Tugas", ScreenRoute.TaskList, Icons.Outlined.CheckCircle),
+    BottomNavItem("Jadwal", ScreenRoute.ScheduleList, Icons.Outlined.CalendarMonth),
+    BottomNavItem("Catatan", ScreenRoute.NoteList, Icons.AutoMirrored.Outlined.MenuBook),
+    BottomNavItem("Target", ScreenRoute.GoalList, Icons.Outlined.TrackChanges),
+    BottomNavItem("Referensi", ScreenRoute.ReferenceList, Icons.Outlined.FolderOpen)
 )
 
 /**
@@ -56,8 +59,8 @@ val bottomNavItems = listOf(
  */
 @Composable
 fun StudentLifeBottomNavBar(
-    currentRoute: String?,
-    onNavigateToRoute: (String) -> Unit,
+    currentDestination: NavDestination?,
+    onNavigateToRoute: (ScreenRoute) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -81,7 +84,7 @@ fun StudentLifeBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             bottomNavItems.forEach { item ->
-                val isSelected = currentRoute == item.route
+                val isSelected = currentDestination?.hierarchy?.any { it.hasRoute(item.route::class) } == true
                 val itemColor = if (isSelected) PrimaryBlue else TextMuted
                 val interactionSource = remember { MutableInteractionSource() }
 

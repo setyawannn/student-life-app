@@ -64,6 +64,14 @@ class FakeNoteRepository : NoteRepository {
         return Resource.Success(Unit)
     }
 
+    override suspend fun updateNoteWithImage(note: Note, imageBytes: ByteArray?): Resource<Unit> {
+        val index = sampleNotes.indexOfFirst { it.id == note.id }
+        if (index != -1) {
+            sampleNotes[index] = note
+        }
+        return Resource.Success(Unit)
+    }
+
     override suspend fun deleteNote(noteId: String): Resource<Unit> {
         sampleNotes.removeAll { it.id == noteId }
         return Resource.Success(Unit)

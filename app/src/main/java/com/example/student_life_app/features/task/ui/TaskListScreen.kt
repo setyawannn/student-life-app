@@ -42,38 +42,74 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.EmptyStateView
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.task.controller.TaskViewModel
+import com.example.student_life_app.features.task.viewmodel.TaskListUiState
+import com.example.student_life_app.features.task.viewmodel.TaskViewModel
+import com.example.student_life_app.features.task.model.Task
 import com.example.student_life_app.features.task.ui.components.TaskCard
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
+import com.example.student_life_app.ui.theme.StudentlifeappTheme
 import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 
 /**
- * Screen Manajemen Tugas dengan arsitektur MVVM murni.
- * Seluruh data tugas dan logika filter dikendalikan oleh TaskViewModel.
+ * Screen Manajemen Tugas (Stateful): menghubungkan TaskViewModel ke TaskListContent.
  */
 @Composable
 fun TaskListScreen(
     viewModel: TaskViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.loadTasks()}
+
+    TaskListContent(
+        uiState = uiState,
+        searchQuery = viewModel.searchQuery,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onFilterSelect = viewModel::onFilterSelect,
+        onToggleTaskCompletion = viewModel::toggleTaskCompletion,
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
+    )
+}
+
+/**
+ * Konten Manajemen Tugas (Stateless): murni menerima state dan callback tanpa ViewModel.
+ */
+@Composable
+fun TaskListContent(
+    uiState: TaskListUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onFilterSelect: (String) -> Unit,
+    onToggleTaskCompletion: (Task) -> Unit,
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
+) {
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Daftar Tugas",
-                badgeIcon = Icons.Outlined.CheckCircle
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {
@@ -121,8 +157,8 @@ fun TaskListScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
                                 text = "Cari tugas atau mata kuliah...",
@@ -171,7 +207,7 @@ fun TaskListScreen(
                                     if (isSelected) PrimaryBlue else BorderOutlineVariant,
                                     RoundedCornerShape(20.dp)
                                 )
-                                .clickable { viewModel.onFilterSelect(filter) }
+                                .clickable { onFilterSelect(filter) }
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
@@ -238,7 +274,7 @@ fun TaskListScreen(
                     TaskCard(
                         task = task,
                         onClick = { onNavigateToDetail(task.id) },
-                        onToggleCompletion = { viewModel.toggleTaskCompletion(task) }
+                        onToggleCompletion = { onToggleTaskCompletion(task) }
                     )
                 }
             }
@@ -294,5 +330,19 @@ fun TaskSummaryStatCard(
                 fontWeight = FontWeight.Medium
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TaskListContentPreview() {
+    StudentlifeappTheme {
+        TaskListContent(
+            uiState = TaskListUiState(),
+            searchQuery = "",
+            onSearchQueryChange = {},
+            onFilterSelect = {},
+            onToggleTaskCompletion = {}
+        )
     }
 }
