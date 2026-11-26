@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.student_life_app.core.common.Resource
-import com.example.student_life_app.features.task.data.repository.FakeTaskRepository
+import com.example.student_life_app.features.task.data.repository.SupabaseTaskRepository
 import com.example.student_life_app.features.task.data.repository.TaskRepository
 import com.example.student_life_app.features.task.model.Task
 import com.example.student_life_app.features.task.model.TaskStatus
@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 data class TaskListUiState(
     val isLoading: Boolean = false,
@@ -27,6 +28,7 @@ data class TaskListUiState(
     val filterOptions: List<String> = listOf("Semua", "Belum Selesai", "Selesai"),
     val allTasks: List<Task> = emptyList(),
     val filteredTasks: List<Task> = emptyList(),
+    val selectedTask: Task? = null,
     val totalCount: Int = 0,
     val pendingCount: Int = 0,
     val completedCount: Int = 0,
@@ -34,7 +36,7 @@ data class TaskListUiState(
 )
 
 class TaskViewModel(
-    private val repository: TaskRepository = FakeTaskRepository(),
+    private val repository: TaskRepository = SupabaseTaskRepository(),
     private val service: TaskService = TaskServiceImpl()
 ) : ViewModel() {
 
@@ -46,16 +48,21 @@ class TaskViewModel(
     private val _allTasks = MutableStateFlow<List<Task>>(emptyList())
     private val _searchQuery = MutableStateFlow("")
     private val _selectedFilter = MutableStateFlow("Semua")
+    private val _selectedTask = MutableStateFlow<Task?>(null)
 
     private var loadJob: Job? = null
 
+    private val _statusPair = combine(_isLoading, _errorMessage) { loading, error ->
+        loading to error
+    }
+
     val uiState: StateFlow<TaskListUiState> = combine(
-        _isLoading,
-        _errorMessage,
+        _statusPair,
         _allTasks,
         _searchQuery,
-        _selectedFilter
-    ) { isLoading, errorMessage, allTasks, query, selectedFilter ->
+        _selectedFilter,
+        _selectedTask
+    ) { (isLoading, errorMessage), allTasks, query, selectedFilter, selectedTask ->
         val total = allTasks.size
         val completed = allTasks.count { it.status == TaskStatus.COMPLETED }
         val pending = total - completed
@@ -65,6 +72,7 @@ class TaskViewModel(
             selectedFilter = selectedFilter,
             allTasks = allTasks,
             filteredTasks = applyFilter(allTasks, query, selectedFilter),
+            selectedTask = selectedTask,
             totalCount = total,
             pendingCount = pending,
             completedCount = completed,
@@ -101,6 +109,16 @@ class TaskViewModel(
         }
     }
 
+    fun loadTaskDetail(taskId: String) {
+        viewModelScope.launch {
+            when (val result = repository.getTaskById(taskId)) {
+                is Resource.Success -> _selectedTask.value = result.data
+                is Resource.Error -> _errorMessage.value = result.message
+                else -> Unit
+            }
+        }
+    }
+
     fun onSearchQueryChange(query: String) {
         searchQuery = query
         _searchQuery.value = query
@@ -112,10 +130,76 @@ class TaskViewModel(
 
     fun toggleTaskCompletion(task: Task) {
         val newStatus = if (task.status == TaskStatus.COMPLETED) TaskStatus.TODO else TaskStatus.COMPLETED
+        updateTaskStatus(task.id, newStatus)
+    }
+
+    fun updateTaskStatus(taskId: String, newStatus: TaskStatus) {
         viewModelScope.launch {
-            repository.updateTaskStatus(task.id, newStatus)
+            repository.updateTaskStatus(taskId, newStatus)
+            loadTaskDetail(taskId)
             loadTasks()
         }
+    }
+
+    fun saveTask(
+        taskId: String?,
+        title: String,
+        courseName: String,
+        description: String,
+        dueDate: String,
+        status: TaskStatus,
+        onSuccess: () -> Unit
+    ) {
+        val validationError = service.validateTaskInput(title, courseName)
+        if (validationError != null) {
+            _errorMessage.value = validationError
+            return
+        }
+        if (dueDate.isBlank()) {
+            _errorMessage.value = "Tenggat waktu tidak boleh kosong"
+            return
+        }
+
+        viewModelScope.launch {
+            _errorMessage.value = null
+            if (taskId == null) {
+                val newTask = Task(
+                    id = UUID.randomUUID().toString(),
+                    userId = "default_user",
+                    title = title.trim(),
+                    courseName = courseName.trim(),
+                    description = description.trim().ifBlank { null },
+                    dueDate = dueDate.trim(),
+                    status = status
+                )
+                repository.createTask(newTask)
+            } else {
+                val updatedTask = Task(
+                    id = taskId,
+                    userId = "default_user",
+                    title = title.trim(),
+                    courseName = courseName.trim(),
+                    description = description.trim().ifBlank { null },
+                    dueDate = dueDate.trim(),
+                    status = status
+                )
+                repository.updateTask(updatedTask)
+            }
+            loadTasks()
+            onSuccess()
+        }
+    }
+
+    fun deleteTask(taskId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            repository.deleteTask(taskId)
+            loadTasks()
+            onSuccess()
+        }
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
     }
 
     private fun applyFilter(tasks: List<Task>, query: String, filter: String): List<Task> {

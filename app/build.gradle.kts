@@ -68,6 +68,13 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.richeditor.compose)
 
+    // Supabase & Ktor Engine
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.storage)
+    implementation(libs.ktor.client.android)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

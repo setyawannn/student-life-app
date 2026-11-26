@@ -35,6 +35,8 @@ import com.example.student_life_app.features.reference.ui.ReferenceListScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleDetailScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleFormScreen
 import com.example.student_life_app.features.schedule.ui.ScheduleListScreen
+import com.example.student_life_app.features.task.ui.TaskDetailScreen
+import com.example.student_life_app.features.task.ui.TaskFormScreen
 import com.example.student_life_app.features.task.ui.TaskListScreen
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -154,7 +156,28 @@ fun MainAppContainer(
             // Fitur 1: Manajemen Tugas Kuliah (Gangsar Wijayanto)
             composable<ScreenRoute.TaskList> {
                 TaskListScreen(
+                    onNavigateToDetail = { id ->
+                        navController.navigate(ScreenRoute.TaskDetail(id))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.TaskForm())
+                    },
                     onNavigateToProfile = navigateToProfile
+                )
+            }
+            composable<ScreenRoute.TaskDetail> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.TaskDetail>()
+                TaskDetailScreen(
+                    taskId = args.taskId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToEdit = { id -> navController.navigate(ScreenRoute.TaskForm(id)) }
+                )
+            }
+            composable<ScreenRoute.TaskForm> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.TaskForm>()
+                TaskFormScreen(
+                    taskId = args.taskId,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

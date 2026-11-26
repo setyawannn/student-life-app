@@ -60,6 +60,9 @@ import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 
 /**
  * Screen Manajemen Tugas (Stateful): menghubungkan TaskViewModel ke TaskListContent.
@@ -72,6 +75,8 @@ fun TaskListScreen(
     onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.loadTasks()}
 
     TaskListContent(
         uiState = uiState,
