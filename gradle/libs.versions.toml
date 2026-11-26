@@ -14,6 +14,7 @@ kotlinxSerialization = "1.7.3"
 coil = "2.7.0"
 supabase = "3.0.3"
 ktor = "3.0.3"
+richEditor = "1.0.0-rc13"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,7 @@ supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgre
 supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt" }
 supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" }
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+richeditor-compose = { group = "com.mohamedrejeb.richeditor", name = "richeditor-compose", version.ref = "richEditor" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

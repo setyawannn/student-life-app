@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,11 +40,12 @@ import com.example.student_life_app.ui.theme.TextSecondary
 @Composable
 fun StudentLifeHeader(
     title: String,
-    badgeIcon: ImageVector,
+    badgeIcon: ImageVector? = null,
     modifier: Modifier = Modifier,
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
-    hasNotification: Boolean = true,
+    showProfileButton: Boolean = true,
+    hasNotification: Boolean = false,
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
@@ -61,7 +61,7 @@ fun StudentLifeHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Sisi Kiri: Back button ATAU Icon Badge + Judul Halaman
+            // Sisi Kiri: Back button (opsional) + Judul Halaman tanpa ikon badge
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
@@ -78,23 +78,6 @@ fun StudentLifeHeader(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                } else {
-                    // Kotak Badge Ikon Biru Khas StudentLife
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(PrimaryBlue),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = badgeIcon,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
                 }
 
                 Text(
@@ -107,40 +90,12 @@ fun StudentLifeHeader(
                 )
             }
 
-            // Sisi Kanan: Notifikasi (Outline) & Avatar Profil
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Tombol Lonceng Notifikasi Outline
-                IconButton(
-                    onClick = onNotificationClick,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Notifikasi",
-                            tint = TextSecondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        if (hasNotification) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(PrimaryBlue)
-                                    .align(Alignment.TopEnd)
-                            )
-                        }
-                    }
-                }
-
-                // Avatar Profil Pengguna
+            // Sisi Kanan: Avatar Profil (disembunyikan saat sudah di halaman pengaturan)
+            if (showProfileButton) {
                 IconButton(
                     onClick = onProfileClick,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(PrimaryBlue)
                 ) {

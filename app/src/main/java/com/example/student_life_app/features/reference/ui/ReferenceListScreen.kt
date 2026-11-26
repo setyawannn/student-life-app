@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,33 +44,62 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.EmptyStateView
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.reference.controller.ReferenceViewModel
+import com.example.student_life_app.features.reference.viewmodel.ReferenceUiState
+import com.example.student_life_app.features.reference.viewmodel.ReferenceViewModel
 import com.example.student_life_app.features.reference.model.ReferenceCategory
 import com.example.student_life_app.features.reference.ui.components.ReferenceCard
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
+import com.example.student_life_app.ui.theme.StudentlifeappTheme
 import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextSecondary
 
 /**
- * Screen Referensi & Tautan Materi dengan pola arsitektur MVVM murni.
- * Seluruh data referensi tautan dikendalikan melalui ReferenceViewModel.
+ * Screen Referensi & Tautan Materi (Stateful): menghubungkan ReferenceViewModel ke ReferenceListContent.
  */
 @Composable
 fun ReferenceListScreen(
     viewModel: ReferenceViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ReferenceListContent(
+        uiState = uiState,
+        searchQuery = viewModel.searchQuery,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onCategorySelect = viewModel::onCategorySelect,
+        onToggleFavorite = viewModel::toggleFavorite,
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
+    )
+}
+
+/**
+ * Konten Referensi Materi (Stateless): murni menerima state dan callback tanpa ViewModel.
+ */
+@Composable
+fun ReferenceListContent(
+    uiState: ReferenceUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onCategorySelect: (ReferenceCategory?) -> Unit,
+    onToggleFavorite: (String) -> Unit,
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
+) {
     val categoryList = listOf("Semua") + ReferenceCategory.entries.map { it.name }
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Referensi Materi",
-                badgeIcon = Icons.Outlined.FolderOpen
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {
@@ -117,8 +147,8 @@ fun ReferenceListScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
                                 text = "Cari judul referensi atau materi...",
@@ -163,7 +193,7 @@ fun ReferenceListScreen(
                                 )
                                 .clickable {
                                     val cat = if (categoryName == "Semua") null else ReferenceCategory.valueOf(categoryName)
-                                    viewModel.onCategorySelect(cat)
+                                    onCategorySelect(cat)
                                 }
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
@@ -201,10 +231,24 @@ fun ReferenceListScreen(
                     ReferenceCard(
                         reference = reference,
                         onClick = { onNavigateToDetail(reference.id) },
-                        onToggleFavorite = { viewModel.toggleFavorite(reference.id) }
+                        onToggleFavorite = { onToggleFavorite(reference.id) }
                     )
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReferenceListContentPreview() {
+    StudentlifeappTheme {
+        ReferenceListContent(
+            uiState = ReferenceUiState(),
+            searchQuery = "",
+            onSearchQueryChange = {},
+            onCategorySelect = {},
+            onToggleFavorite = {}
+        )
     }
 }

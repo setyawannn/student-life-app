@@ -1,18 +1,16 @@
 package com.example.student_life_app.features.task.data.datasource
 
 import android.util.Log
-import com.example.student_life_app.core.database.SupabaseClientProvider
+import com.example.student_life_app.core.database.SupabaseManager
 import com.example.student_life_app.features.task.data.dto.TaskDto
-import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 
 class TaskRemoteDataSourceImpl : TaskRemoteDataSource {
 
-    private val client = SupabaseClientProvider.client
+    private val client = SupabaseManager.client
 
     override suspend fun getTasks(userId: String): List<TaskDto> {
-        val authUserId = client.auth.currentUserOrNull()?.id
-        val validUserId = authUserId ?: userId.takeIf { it.length == 36 && it.contains("-") }
+        val validUserId = SupabaseManager.ensureUserId()
 
         return try {
             client.from("tasks")
@@ -31,8 +29,7 @@ class TaskRemoteDataSourceImpl : TaskRemoteDataSource {
     }
 
     override suspend fun insertTask(dto: TaskDto): TaskDto {
-        val authUserId = client.auth.currentUserOrNull()?.id
-        val sanitizedUserId = authUserId ?: dto.userId?.takeIf { it.length == 36 && it.contains("-") }
+        val sanitizedUserId = SupabaseManager.ensureUserId()
         val finalDto = dto.copy(userId = sanitizedUserId)
         Log.d("SUPABASE_TASK", "Memproses insertTask dengan userId=$sanitizedUserId, DTO=$finalDto")
 
@@ -50,8 +47,7 @@ class TaskRemoteDataSourceImpl : TaskRemoteDataSource {
 
     override suspend fun updateTask(dto: TaskDto) {
         val id = dto.id ?: return
-        val authUserId = client.auth.currentUserOrNull()?.id
-        val sanitizedUserId = authUserId ?: dto.userId?.takeIf { it.length == 36 && it.contains("-") }
+        val sanitizedUserId = SupabaseManager.ensureUserId()
         val finalDto = dto.copy(userId = sanitizedUserId)
 
         try {

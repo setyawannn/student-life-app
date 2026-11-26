@@ -9,6 +9,7 @@ interface ReferenceRepository {
     fun getReferences(userId: String): Flow<Resource<List<Reference>>>
     fun getReferencesByCategory(userId: String, category: ReferenceCategory): Flow<Resource<List<Reference>>>
     suspend fun createReference(reference: Reference): Resource<Unit>
+    suspend fun updateReference(reference: Reference): Resource<Unit>
     suspend fun toggleFavorite(referenceId: String, isFavorite: Boolean): Resource<Unit>
     suspend fun deleteReference(referenceId: String): Resource<Unit>
 }

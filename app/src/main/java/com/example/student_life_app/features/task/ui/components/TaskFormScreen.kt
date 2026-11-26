@@ -23,7 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.task.controller.TaskViewModel
+import com.example.student_life_app.features.task.viewmodel.TaskViewModel
 import com.example.student_life_app.features.task.model.TaskStatus
 import com.example.student_life_app.ui.theme.*
 import java.text.SimpleDateFormat

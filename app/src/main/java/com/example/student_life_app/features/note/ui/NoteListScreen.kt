@@ -31,9 +31,12 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -45,38 +48,72 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.student_life_app.core.designsystem.components.EmptyStateView
 import com.example.student_life_app.core.designsystem.components.StudentLifeHeader
 import com.example.student_life_app.core.designsystem.components.StudentLifeScaffold
-import com.example.student_life_app.features.note.controller.NoteViewModel
+import com.example.student_life_app.features.note.viewmodel.NoteUiState
+import com.example.student_life_app.features.note.viewmodel.NoteViewModel
 import com.example.student_life_app.features.note.ui.components.NoteCard
 import com.example.student_life_app.ui.theme.BorderOutlineVariant
 import com.example.student_life_app.ui.theme.PrimaryBlue
+import com.example.student_life_app.ui.theme.StudentlifeappTheme
 import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
 
 /**
- * Screen Catatan Belajar dengan penerapan murni arsitektur MVVM (Model-View-ViewModel).
- * Seluruh state, filter, pencarian, dan data dipisahkan sepenuhnya di NoteViewModel.
+ * Screen Catatan Belajar (Stateful): menghubungkan NoteViewModel ke NoteListContent.
  */
 @Composable
 fun NoteListScreen(
     viewModel: NoteViewModel = viewModel(),
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToCreate: () -> Unit = {}
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    NoteListContent(
+        uiState = uiState,
+        searchQuery = viewModel.searchQuery,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onCategorySelect = viewModel::onCategorySelect,
+        onBookmarkToggle = viewModel::onBookmarkToggle,
+        onRetry = { viewModel.loadNotes() },
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToProfile = onNavigateToProfile
+    )
+}
+
+/**
+ * Konten Catatan Belajar (Stateless): murni menerima state dan callback tanpa ViewModel.
+ */
+@Composable
+fun NoteListContent(
+    uiState: NoteUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onCategorySelect: (String) -> Unit,
+    onBookmarkToggle: (String) -> Unit,
+    onRetry: () -> Unit = {},
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToCreate: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
+) {
 
     StudentLifeScaffold(
         topBar = {
             StudentLifeHeader(
                 title = "Catatan Belajar",
-                badgeIcon = Icons.AutoMirrored.Outlined.MenuBook
+                onProfileClick = onNavigateToProfile
             )
         },
         floatingActionButton = {
@@ -97,137 +134,195 @@ fun NoteListScreen(
             }
         }
     ) { innerPadding ->
-        // Konten Scrollable Dinamis di Tengah
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 84.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // 1. Kotak Pencarian (Full Width)
-            item(span = { GridItemSpan(2) }) {
-                Row(
+        val loadError = uiState.errorMessage
+        when {
+            uiState.isLoading && uiState.allNotes.isEmpty() -> {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(SurfaceCard)
-                        .border(1.dp, BorderOutlineVariant, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Search,
-                        contentDescription = "Cari",
-                        tint = TextMuted,
-                        modifier = Modifier.size(20.dp)
+                    CircularProgressIndicator()
+                }
+            }
+            loadError != null && uiState.allNotes.isEmpty() -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = loadError,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = {
-                            Text(
-                                text = "Cari judul atau isi catatan...",
-                                color = TextMuted,
-                                fontSize = 14.sp
-                            )
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(
-                        onClick = { },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Tune,
-                            contentDescription = "Filter",
-                            tint = TextMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onRetry) {
+                        Text("Coba Lagi")
                     }
                 }
             }
-
-            // 2. Barisan Filter Chip Horizontal (Full Width)
-            item(span = { GridItemSpan(2) }) {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+            else -> {
+                // Konten Scrollable Dinamis di Tengah
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 84.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(uiState.categoryFilters) { filter ->
-                        val isSelected = filter == uiState.selectedCategory
-                        Box(
+                    // 1. Kotak Pencarian (Full Width)
+                    item(span = { GridItemSpan(2) }) {
+                        Row(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(if (isSelected) PrimaryBlue else SurfaceCard)
-                                .border(
-                                    1.dp,
-                                    if (isSelected) PrimaryBlue else BorderOutlineVariant,
-                                    RoundedCornerShape(20.dp)
-                                )
-                                .clickable { viewModel.onCategorySelect(filter) }
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .fillMaxWidth()
+                                .height(52.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(SurfaceCard)
+                                .border(1.dp, BorderOutlineVariant, RoundedCornerShape(14.dp))
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = filter,
-                                color = if (isSelected) Color.White else TextSecondary,
-                                fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = "Cari",
+                                tint = TextMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = onSearchQueryChange,
+                                placeholder = {
+                                    Text(
+                                        text = "Cari judul atau isi catatan...",
+                                        color = TextMuted,
+                                        fontSize = 14.sp
+                                    )
+                                },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Tune,
+                                    contentDescription = "Filter",
+                                    tint = TextMuted,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // 2. Barisan Filter Chip Horizontal (Full Width)
+                    item(span = { GridItemSpan(2) }) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(uiState.categoryFilters) { filter ->
+                                val isSelected = filter == uiState.selectedCategory
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(if (isSelected) PrimaryBlue else SurfaceCard)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) PrimaryBlue else BorderOutlineVariant,
+                                            RoundedCornerShape(20.dp)
+                                        )
+                                        .clickable { onCategorySelect(filter) }
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = filter,
+                                        color = if (isSelected) Color.White else TextSecondary,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Ringkasan Statistik KPI 3 Kartu (Full Width)
+                    item(span = { GridItemSpan(2) }) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SummaryStatCard(
+                                count = "${uiState.totalNotesCount}",
+                                label = "Total Catatan",
+                                icon = Icons.Outlined.Description,
+                                indicatorColor = PrimaryBlue,
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryStatCard(
+                                count = "${uiState.photoNotesCount}",
+                                label = "Dengan Foto",
+                                icon = Icons.Outlined.CameraAlt,
+                                indicatorColor = Color(0xFF00714D),
+                                modifier = Modifier.weight(1f)
+                            )
+                            SummaryStatCard(
+                                count = "${uiState.coursesCount}",
+                                label = "Mata Kuliah",
+                                icon = Icons.Outlined.School,
+                                indicatorColor = Color(0xFFE28B00),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    // 4. Daftar Kartu Catatan (2 Kolom Grid) atau Empty State
+                    if (uiState.filteredNotes.isEmpty()) {
+                        item(span = { GridItemSpan(2) }) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                EmptyStateView(
+                                    icon = Icons.AutoMirrored.Outlined.MenuBook,
+                                    title = "Tidak Ada Catatan",
+                                    description = if (uiState.searchQuery.isNotBlank()) {
+                                        "Catatan dengan kata kunci '${uiState.searchQuery}' tidak ditemukan."
+                                    } else {
+                                        "Belum ada catatan belajar tersimpan. Ketuk + untuk membuat catatan baru."
+                                    },
+                                    actionButtonText = "Tambah Catatan Baru",
+                                    onActionClick = onNavigateToCreate
+                                )
+                            }
+                        }
+                    } else {
+                        items(uiState.filteredNotes, key = { it.id }) { note ->
+                            NoteCard(
+                                note = note,
+                                onBookmarkClick = { onBookmarkToggle(note.id) },
+                                onClick = { onNavigateToDetail(note.id) }
                             )
                         }
                     }
                 }
-            }
-
-            // 3. Ringkasan Statistik KPI 3 Kartu (Full Width)
-            item(span = { GridItemSpan(2) }) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SummaryStatCard(
-                        count = "${uiState.totalNotesCount}",
-                        label = "Total Catatan",
-                        icon = Icons.Outlined.Description,
-                        indicatorColor = PrimaryBlue,
-                        modifier = Modifier.weight(1f)
-                    )
-                    SummaryStatCard(
-                        count = "${uiState.photoNotesCount}",
-                        label = "Dengan Foto",
-                        icon = Icons.Outlined.CameraAlt,
-                        indicatorColor = Color(0xFF00714D),
-                        modifier = Modifier.weight(1f)
-                    )
-                    SummaryStatCard(
-                        count = "${uiState.coursesCount}",
-                        label = "Mata Kuliah",
-                        icon = Icons.Outlined.School,
-                        indicatorColor = Color(0xFFE28B00),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // 4. Daftar Kartu Catatan (2 Kolom Grid) dari filteredNotes ViewModel
-            items(uiState.filteredNotes, key = { it.id }) { note ->
-                NoteCard(
-                    note = note,
-                    onBookmarkClick = { viewModel.onBookmarkToggle(note.id) },
-                    onClick = { onNavigateToDetail(note.id) }
-                )
             }
         }
     }
@@ -281,5 +376,19 @@ fun SummaryStatCard(
                 fontWeight = FontWeight.Medium
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NoteListContentPreview() {
+    StudentlifeappTheme {
+        NoteListContent(
+            uiState = NoteUiState(),
+            searchQuery = "",
+            onSearchQueryChange = {},
+            onCategorySelect = {},
+            onBookmarkToggle = {}
+        )
     }
 }

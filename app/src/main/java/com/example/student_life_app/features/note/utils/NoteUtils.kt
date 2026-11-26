@@ -6,4 +6,10 @@ object NoteUtils {
     fun generateStoragePath(userId: String): String {
         return "$userId/notes/${UUID.randomUUID()}.jpg"
     }
+
+    fun stripHtmlTags(input: String): String =
+        input.replace(Regex("<[^>]*>"), " ")
+            .replace("&nbsp;", " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
 }

@@ -9,5 +9,6 @@ interface ScheduleRepository {
     fun getSchedules(userId: String): Flow<Resource<List<Schedule>>>
     fun getSchedulesByDay(userId: String, day: DayOfWeekEnum): Flow<Resource<List<Schedule>>>
     suspend fun createSchedule(schedule: Schedule): Resource<Unit>
+    suspend fun updateSchedule(schedule: Schedule): Resource<Unit>
     suspend fun deleteSchedule(scheduleId: String): Resource<Unit>
 }

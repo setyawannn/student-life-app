@@ -94,6 +94,14 @@ class FakeReferenceRepository : ReferenceRepository {
         return Resource.Success(Unit)
     }
 
+    override suspend fun updateReference(reference: Reference): Resource<Unit> {
+        val index = sampleReferences.indexOfFirst { it.id == reference.id }
+        if (index != -1) {
+            sampleReferences[index] = reference
+        }
+        return Resource.Success(Unit)
+    }
+
     override suspend fun toggleFavorite(referenceId: String, isFavorite: Boolean): Resource<Unit> {
         val index = sampleReferences.indexOfFirst { it.id == referenceId }
         if (index != -1) {

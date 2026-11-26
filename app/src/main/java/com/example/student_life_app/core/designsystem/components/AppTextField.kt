@@ -11,7 +11,11 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -22,15 +26,24 @@ fun AppTextField(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     errorMessage: String? = null,
+    isRequired: Boolean = false,
     singleLine: Boolean = true,
     minLines: Int = 1,
     maxLines: Int = if (singleLine) 1 else 5
 ) {
     val isError = !errorMessage.isNullOrBlank()
+    val errorColor = MaterialTheme.colorScheme.error
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = label,
+            text = buildAnnotatedString {
+                append(label)
+                if (isRequired) {
+                    withStyle(SpanStyle(color = errorColor)) {
+                        append(" *")
+                    }
+                }
+            },
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
@@ -39,11 +52,20 @@ fun AppTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = placeholder?.let { { Text(text = it) } },
+            placeholder = placeholder?.let {
+                {
+                    Text(
+                        text = it,
+                        maxLines = if (singleLine) 1 else maxLines,
+                        softWrap = !singleLine,
+                        overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip
+                    )
+                }
+            },
             isError = isError,
             singleLine = singleLine,
-            minLines = minLines,
-            maxLines = maxLines,
+            minLines = if (singleLine) 1 else minLines,
+            maxLines = if (singleLine) 1 else maxLines,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
