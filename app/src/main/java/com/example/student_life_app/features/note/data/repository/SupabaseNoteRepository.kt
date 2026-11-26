@@ -27,7 +27,7 @@ class SupabaseNoteRepository(
     private companion object {
         const val TAG = "NoteRepo"
         val cache = MutableStateFlow<List<Note>>(emptyList())
-        var loaded = false
+        var loadedUserId: String? = null
     }
 
     private fun Exception.toUserMessage(): String =
@@ -36,18 +36,19 @@ class SupabaseNoteRepository(
     override fun getNotes(userId: String): Flow<Resource<List<Note>>> =
         flow {
             emit(Resource.Loading)
-            if (!loaded) {
-                try {
-                    val uid = SupabaseManager.ensureUserId()
+            try {
+                val uid = SupabaseManager.ensureUserId()
+                if (loadedUserId != uid) {
+                    cache.value = emptyList()
                     cache.value = remote.getNotes(uid).map { it.toDomain() }
-                    loaded = true
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e(TAG, "Gagal memuat catatan", e)
-                    emit(Resource.Error(e.toUserMessage(), e))
-                    return@flow
+                    loadedUserId = uid
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Gagal memuat catatan", e)
+                emit(Resource.Error(e.toUserMessage(), e))
+                return@flow
             }
             emitAll(cache.map { list -> Resource.Success(list) })
         }

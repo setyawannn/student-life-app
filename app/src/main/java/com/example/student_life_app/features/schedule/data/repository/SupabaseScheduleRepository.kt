@@ -29,7 +29,7 @@ class SupabaseScheduleRepository(
     private companion object {
         const val TAG = "ScheduleRepo"
         val cache = MutableStateFlow<List<Schedule>>(emptyList())
-        var loaded = false
+        var loadedUserId: String? = null
     }
 
     private fun Exception.toUserMessage(): String =
@@ -38,18 +38,19 @@ class SupabaseScheduleRepository(
     override fun getSchedules(userId: String): Flow<Resource<List<Schedule>>> =
         flow<Resource<List<Schedule>>> {
             emit(Resource.Loading)
-            if (!loaded) {
-                try {
-                    val uid = SupabaseManager.ensureUserId()
+            try {
+                val uid = SupabaseManager.ensureUserId()
+                if (loadedUserId != uid) {
+                    cache.value = emptyList()
                     cache.value = remote.getSchedules(uid).map { it.toDomain() }
-                    loaded = true
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e(TAG, "Gagal memuat jadwal", e)
-                    emit(Resource.Error(e.toUserMessage(), e))
-                    return@flow
+                    loadedUserId = uid
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Gagal memuat jadwal", e)
+                emit(Resource.Error(e.toUserMessage(), e))
+                return@flow
             }
             emitAll(cache.map { list -> Resource.Success(list) })
         }
