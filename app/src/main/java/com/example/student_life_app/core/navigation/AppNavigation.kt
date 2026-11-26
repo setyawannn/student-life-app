@@ -24,6 +24,8 @@ import androidx.navigation.toRoute
 import com.example.student_life_app.core.database.SupabaseManager
 import com.example.student_life_app.features.auth.ui.LoginScreen
 import com.example.student_life_app.features.auth.ui.RegisterScreen
+import com.example.student_life_app.features.goal.ui.GoalDetailScreen
+import com.example.student_life_app.features.goal.ui.GoalFormScreen
 import com.example.student_life_app.features.goal.ui.GoalListScreen
 import com.example.student_life_app.features.note.ui.NoteDetailScreen
 import com.example.student_life_app.features.note.ui.NoteFormScreen
@@ -244,7 +246,29 @@ fun MainAppContainer(
             // Fitur 4: Target Belajar (Tubagus Fatahudin Mulkan)
             composable<ScreenRoute.GoalList> {
                 GoalListScreen(
+                    onNavigateToDetail = { id ->
+                        navController.navigate(ScreenRoute.GoalDetail(id))
+                    },
+                    onNavigateToCreate = {
+                        navController.navigate(ScreenRoute.GoalForm())
+                    },
                     onNavigateToProfile = navigateToProfile
+                )
+            }
+            composable<ScreenRoute.GoalDetail> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.GoalDetail>()
+                GoalDetailScreen(
+                    goalId = args.goalId,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(ScreenRoute.GoalForm(id)) }
+                )
+            }
+            composable<ScreenRoute.GoalForm> { backStackEntry ->
+                val args = backStackEntry.toRoute<ScreenRoute.GoalForm>()
+                GoalFormScreen(
+                    goalId = args.goalId,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
                 )
             }
 

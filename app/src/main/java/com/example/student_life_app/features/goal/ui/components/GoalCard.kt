@@ -15,8 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +38,9 @@ import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextPrimary
 import com.example.student_life_app.ui.theme.TextSecondary
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun GoalCard(
@@ -45,7 +49,8 @@ fun GoalCard(
     modifier: Modifier = Modifier
 ) {
     val isCompleted = goal.progress >= 100
-    val progressFloat = goal.progress / 100f
+    val progressFloat = (goal.progress.coerceIn(0, 100)) / 100f
+    val themeColor = if (isCompleted) Color(0xFF00714D) else PrimaryBlue
 
     Column(
         modifier = modifier
@@ -56,38 +61,93 @@ fun GoalCard(
             .clickable(onClick = onClick)
             .padding(16.dp)
     ) {
+        // Header Row: Category Badge + Priority Pill + Chevron
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Chip Status Progres
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(if (isCompleted) Color(0xFFE8F5E9) else Color(0xFFEFF6FF))
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = if (isCompleted) "Tercapai" else "Dalam Progres",
-                    color = if (isCompleted) Color(0xFF00714D) else PrimaryBlue,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                // Category Chip
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFFEFF6FF))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = goal.category,
+                        color = PrimaryBlue,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Priority or Completed Chip
+                if (isCompleted) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFFE8F5E9))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Outlined.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF00714D),
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Selesai",
+                                color = Color(0xFF00714D),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                } else {
+                    val priorityBg = when (goal.priority) {
+                        "Tinggi" -> Color(0xFFFFF3E0)
+                        "Sedang" -> Color(0xFFFFF8E1)
+                        else -> Color(0xFFF5F5F5)
+                    }
+                    val priorityText = when (goal.priority) {
+                        "Tinggi" -> Color(0xFFE65100)
+                        "Sedang" -> Color(0xFFF57F17)
+                        else -> Color(0xFF616161)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(priorityBg)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "Prioritas ${goal.priority}",
+                            color = priorityText,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
-            // Persentase
-            Text(
-                text = "${goal.progress}%",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isCompleted) Color(0xFF00714D) else PrimaryBlue
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = "Detail",
+                tint = TextMuted,
+                modifier = Modifier.size(20.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Judul Target
+        // Goal Title
         Text(
             text = goal.title,
             style = MaterialTheme.typography.titleMedium.copy(
@@ -112,22 +172,9 @@ fun GoalCard(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Bar Progres Capaian
-        LinearProgressIndicator(
-            progress = { progressFloat },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-            color = if (isCompleted) Color(0xFF00714D) else PrimaryBlue,
-            trackColor = Color(0xFFE2E8F0)
-        )
-
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Tenggat Target
+        // Deadline Info Row
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Outlined.CalendarToday,
@@ -135,12 +182,78 @@ fun GoalCard(
                 tint = TextMuted,
                 modifier = Modifier.size(13.dp)
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "Target: ${goal.deadline}",
+                text = formatGoalDeadline(goal.deadline, isCompleted),
                 fontSize = 11.sp,
                 color = TextMuted
             )
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Sub-task Milestone Progress Text + Percentage
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val totalMilestones = goal.milestones.size
+            val completedMilestones = goal.milestones.count { it.isCompleted }
+            val milestoneLabel = if (isCompleted) {
+                if (totalMilestones > 0) "Semua $totalMilestones modul terpenuhi" else "Semua modul terpenuhi"
+            } else {
+                if (totalMilestones > 0) "$completedMilestones dari $totalMilestones modul selesai" else "Pantau progres capaian"
+            }
+
+            Text(
+                text = milestoneLabel,
+                fontSize = 11.sp,
+                color = TextMuted,
+                fontWeight = FontWeight.Medium
+            )
+
+            Text(
+                text = "${goal.progress}%",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = themeColor
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Progress Bar
+        LinearProgressIndicator(
+            progress = { progressFloat },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp)),
+            color = themeColor,
+            trackColor = Color(0xFFE2E8F0)
+        )
+    }
+}
+
+private fun formatGoalDeadline(deadlineStr: String, isCompleted: Boolean): String {
+    return try {
+        val datePart = deadlineStr.take(10)
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val date = sdf.parse(datePart)
+        if (date != null) {
+            val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.forLanguageTag("id-ID")).format(date)
+            if (isCompleted) {
+                "Selesai pada $formattedDate"
+            } else {
+                val now = Date()
+                val diffMillis = date.time - now.time
+                val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+                if (diffDays >= 0) "Tenggat: $formattedDate • Sisa $diffDays Hari Lagi"
+                else "Tenggat: $formattedDate • Lewat ${-diffDays} Hari"
+            }
+        } else "Tenggat: ${deadlineStr.take(10)}"
+    } catch (_: Exception) {
+        "Tenggat: ${deadlineStr.take(10)}"
     }
 }
