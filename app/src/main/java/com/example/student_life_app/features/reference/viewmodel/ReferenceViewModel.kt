@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.student_life_app.core.common.Resource
-import com.example.student_life_app.features.reference.data.repository.FakeReferenceRepository
 import com.example.student_life_app.features.reference.data.repository.ReferenceRepository
+import com.example.student_life_app.features.reference.data.repository.SupabaseReferenceRepository
 import com.example.student_life_app.features.reference.model.Reference
 import com.example.student_life_app.features.reference.model.ReferenceCategory
 import com.example.student_life_app.features.reference.service.ReferenceService
@@ -33,7 +33,7 @@ data class ReferenceFormErrors(
 data class ReferenceUiState(
     val isLoading: Boolean = false,
     val searchQuery: String = "",
-    val selectedCategory: ReferenceCategory? = null, // null = Semua
+    val selectedCategory: ReferenceCategory? = null,
     val allReferences: List<Reference> = emptyList(),
     val filteredReferences: List<Reference> = emptyList(),
     val totalCount: Int = 0,
@@ -42,7 +42,7 @@ data class ReferenceUiState(
 )
 
 class ReferenceViewModel(
-    private val repository: ReferenceRepository = FakeReferenceRepository(),
+    private val repository: ReferenceRepository = SupabaseReferenceRepository(),
     private val service: ReferenceService = ReferenceServiceImpl()
 ) : ViewModel() {
 
@@ -120,8 +120,10 @@ class ReferenceViewModel(
         viewModelScope.launch {
             val currentItem = _allReferences.value.firstOrNull { it.id == referenceId }
             val currentStatus = currentItem?.isFavorite ?: false
-            repository.toggleFavorite(referenceId, !currentStatus)
-            loadReferences()
+            when (val result = repository.toggleFavorite(referenceId, !currentStatus)) {
+                is Resource.Error -> _errorMessage.value = result.message
+                else -> Unit
+            }
         }
     }
 
@@ -141,7 +143,7 @@ class ReferenceViewModel(
             }
             val newRef = Reference(
                 id = UUID.randomUUID().toString(),
-                userId = "default_user",
+                userId = "",
                 title = title,
                 url = url,
                 category = category,
@@ -149,9 +151,11 @@ class ReferenceViewModel(
                 notes = notes,
                 isFavorite = false
             )
-            repository.createReference(newRef)
-            loadReferences()
-            onSuccess()
+            when (val result = repository.createReference(newRef)) {
+                is Resource.Success -> onSuccess()
+                is Resource.Error -> _errorMessage.value = result.message
+                is Resource.Loading -> Unit
+            }
         }
     }
 
@@ -179,18 +183,22 @@ class ReferenceViewModel(
                     courseName = courseName,
                     notes = notes
                 )
-                repository.updateReference(updated)
-                loadReferences()
-                onSuccess()
+                when (val result = repository.updateReference(updated)) {
+                    is Resource.Success -> onSuccess()
+                    is Resource.Error -> _errorMessage.value = result.message
+                    is Resource.Loading -> Unit
+                }
             }
         }
     }
 
     fun deleteReference(id: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
-            repository.deleteReference(id)
-            loadReferences()
-            onSuccess()
+            when (val result = repository.deleteReference(id)) {
+                is Resource.Success -> onSuccess()
+                is Resource.Error -> _errorMessage.value = result.message
+                is Resource.Loading -> Unit
+            }
         }
     }
 

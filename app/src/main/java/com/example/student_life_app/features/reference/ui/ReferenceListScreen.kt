@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -55,9 +56,6 @@ import com.example.student_life_app.ui.theme.SurfaceCard
 import com.example.student_life_app.ui.theme.TextMuted
 import com.example.student_life_app.ui.theme.TextSecondary
 
-/**
- * Screen Referensi & Tautan Materi (Stateful): menghubungkan ReferenceViewModel ke ReferenceListContent.
- */
 @Composable
 fun ReferenceListScreen(
     viewModel: ReferenceViewModel = viewModel(),
@@ -79,9 +77,6 @@ fun ReferenceListScreen(
     )
 }
 
-/**
- * Konten Referensi Materi (Stateless): murni menerima state dan callback tanpa ViewModel.
- */
 @Composable
 fun ReferenceListContent(
     uiState: ReferenceUiState,
@@ -127,7 +122,6 @@ fun ReferenceListContent(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 84.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 1. Kotak Pencarian
             item {
                 Row(
                     modifier = Modifier
@@ -169,7 +163,6 @@ fun ReferenceListContent(
                 }
             }
 
-            // 2. Barisan Filter Kategori
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -208,8 +201,18 @@ fun ReferenceListContent(
                 }
             }
 
-            // 3. Daftar Kartu Referensi
-            if (uiState.filteredReferences.isEmpty()) {
+            if (uiState.isLoading && uiState.allReferences.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = PrimaryBlue)
+                    }
+                }
+            } else if (uiState.filteredReferences.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
